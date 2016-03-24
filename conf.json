@@ -1,0 +1,6 @@
+{
+  "repositoryDirectory": "tmp",
+  "repositoryFile": "gadget.db",
+  "debugMode": false,
+  "restPort": 9080
+}
