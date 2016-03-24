@@ -32,7 +32,7 @@ func readSettings() {
 		parrot = quant.NewVerboseParrot("gadget")
 	}
 
-	parrot.Debug("Parrot is set to talk so much!")
+	parrot.Debug("Parrot is set to talk a lot!")
 }
 
 func main() {
@@ -42,7 +42,7 @@ func main() {
 	// -------------------
 	app := cli.NewApp()
 	app.Name = "gadget"
-	app.Usage = "the inspector gadget will be used to inspect docker images"
+	app.Usage = "The inspector will be used to inspect docker images"
 	app.Version = "0.0.1"
 	app.Copyright = "gi4nks - 2016"
 
@@ -93,6 +93,12 @@ func main() {
 			Usage:   "serving gadget for rest apis",
 			Action:  CmdServe,
 		},
+		{
+			Name:    "test",
+			Aliases: []string{"te"},
+			Usage:   "test",
+			Action:  CmdTest,
+		},
 	}
 
 	app.Run(os.Args)
@@ -100,16 +106,25 @@ func main() {
 }
 
 // List of functions
+func CmdTest(ctx *cli.Context) {
+	commandWrapper(ctx, func() {
+		parrot.Info("Info")
+		parrot.Debug("Debug", "is", "a", "nice", "thing")
+		parrot.Warn("Attenction", "please", nil)
+
+	})
+}
+
 func CmdServe(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		parrot.Info("==> Serving gadget for REST Apis.")
+		parrot.Info("Serving gadget for REST Apis on port", settings.RestPort())
 		serve()
 	})
 }
 
 func CmdRevive(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		parrot.Info("==> Reviving gadget will reinitialize all the datas.")
+		parrot.Warn("Reviving gadget will reinitialize all the datas.")
 
 		repository.BackupSchema()
 		repository.InitSchema()
@@ -134,7 +149,7 @@ func CmdLabelsById(ctx *cli.Context) {
 			return
 		}
 
-		var img = repository.FindById(id)
+		var img = repository.Get(id)
 
 		if len(img.Labels) == 0 {
 			parrot.Info("[" + img.ID + "] - No labels defined")
@@ -170,9 +185,9 @@ func CmdBuild(ctx *cli.Context) {
 		for _, img := range imgs {
 			if !repository.Exists(img.ID) {
 				repository.Put(img)
-				parrot.Info("[" + img.ID + "] - " + strings.Join(img.RepoTags, ", ") + " Added to bucket")
+				parrot.Info("["+img.ID+"] - ", strings.Join(img.RepoTags, ", "), "added to bucket")
 			} else {
-				parrot.Info("[" + img.ID + "] - " + strings.Join(img.RepoTags, ", ") + " Not inserted in bucket because already exists")
+				parrot.Debug("["+img.ID+"] - ", strings.Join(img.RepoTags, ", "), " not inserted in bucket because already exists")
 			}
 		}
 	})

@@ -9,6 +9,7 @@ type Configuration struct {
 	RepositoryDirectory string
 	RepositoryFile      string
 	DebugMode           bool
+	RestServerMode      string
 	RestPort            int
 }
 
@@ -26,6 +27,7 @@ func (sts *Settings) LoadSettings() {
 		sts.configs.RepositoryDirectory = folder + "/" + ConstRepositoryDirectory
 		sts.configs.RepositoryFile = ConstRepositoryFile
 		sts.configs.DebugMode = ConstDebugMode
+		sts.configs.RestServerMode = ConstRestServerMode
 		sts.configs.RestPort = ConstRestPort
 
 	} else {
@@ -47,6 +49,10 @@ func (sts Settings) RepositoryFile() string {
 
 func (sts Settings) DebugMode() bool {
 	return sts.configs.DebugMode
+}
+
+func (sts Settings) RestServerMode() string {
+	return sts.configs.RestServerMode
 }
 
 func (sts Settings) RestPort() int {

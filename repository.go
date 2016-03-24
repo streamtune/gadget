@@ -91,7 +91,7 @@ func (r *Repository) Put(img docker.APIImages) {
 	err := r.DB.Update(func(tx *bolt.Tx) error {
 		cc := tx.Bucket([]byte("Images"))
 
-		parrot.Info("[" + asJson(img.RepoTags) + "] adding as " + img.ID)
+		parrot.Debug("[" + asJson(img.RepoTags) + "] adding as " + img.ID)
 
 		encoded1, err := json.Marshal(img)
 
@@ -129,7 +129,7 @@ func (r *Repository) Put(img docker.APIImages) {
 			labelIndex.Label = k + ":" + v
 			//parrot.Info("[labelIndex] " + asJson(labelIndex))
 
-			parrot.Info("[" + labelIndex.Label + "] currentLabel.")
+			parrot.Debug("[" + labelIndex.Label + "] currentLabel.")
 
 			lbi := ll.Get([]byte(labelIndex.Label))
 
@@ -141,7 +141,7 @@ func (r *Repository) Put(img docker.APIImages) {
 					return err
 				}
 
-				parrot.Info("[ found ] " + asJson(labelIndex.Ids))
+				parrot.Debug("[ found ] " + asJson(labelIndex.Ids))
 			}
 
 			labelIndex.Ids = append(labelIndex.Ids, img.ID)
@@ -192,7 +192,7 @@ func (r *Repository) GetAll() []docker.APIImages {
 	return images
 }
 
-func (r *Repository) FindById(id string) docker.APIImages {
+func (r *Repository) Get(id string) docker.APIImages {
 	var image = docker.APIImages{}
 
 	err := r.DB.View(func(tx *bolt.Tx) error {
@@ -259,7 +259,7 @@ func (r *Repository) Exists(id string) bool {
 	})
 
 	if err != nil {
-		parrot.Error("Error getting data", err)
+		//parrot.Error("Error getting data", err)
 		return false
 	}
 

@@ -9,6 +9,8 @@ import (
 )
 
 func serve() {
+	gin.SetMode(settings.RestServerMode())
+
 	r := gin.Default()
 	r.Use(Cors())
 	v1 := r.Group("api/v1")

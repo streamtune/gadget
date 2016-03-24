@@ -2,5 +2,6 @@
   "repositoryDirectory": "tmp",
   "repositoryFile": "gadget.db",
   "debugMode": false,
+  "restServerMode": "release",
   "restPort": 9080
 }
