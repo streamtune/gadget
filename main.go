@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	//	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -15,6 +16,7 @@ var parrot = quant.NewParrot("gadget")
 
 var settings = Settings{}
 var repository = Repository{}
+var pathUtils = quant.NewPathUtils()
 
 func initDB() {
 	repository.InitDB()
@@ -55,9 +57,31 @@ func main() {
 		},
 		{
 			Name:    "list",
-			Aliases: []string{"li"},
+			Aliases: []string{"ls"},
 			Usage:   "list all the images",
 			Action:  CmdList,
+		},
+		{
+			Name:    "inspect",
+			Aliases: []string{"in"},
+			Usage:   "inspect the images",
+			Subcommands: []cli.Command{
+				{
+					Name:   "id",
+					Usage:  "Get the info of specific image",
+					Action: CmdInfoById,
+				},
+				{
+					Name:   "tag",
+					Usage:  "Get the info of specific tag",
+					Action: CmdInfoByTag,
+				},
+				{
+					Name:   "all",
+					Usage:  "Get info of the images",
+					Action: CmdInfo,
+				},
+			},
 		},
 		{
 			Name:    "revive",
@@ -88,6 +112,28 @@ func main() {
 			},
 		},
 		{
+			Name:    "volumes",
+			Aliases: []string{"vo"},
+			Usage:   "show me the volumes of images",
+			Subcommands: []cli.Command{
+				{
+					Name:   "id",
+					Usage:  "Get the volumes of specific image",
+					Action: CmdVolumesById,
+				},
+				{
+					Name:   "tag",
+					Usage:  "Get the volumes of specific tag",
+					Action: CmdVolumesByTag,
+				},
+				{
+					Name:   "all",
+					Usage:  "Get all the volumes",
+					Action: CmdVolumes,
+				},
+			},
+		},
+		{
 			Name:    "serve",
 			Aliases: []string{"se"},
 			Usage:   "serving gadget for rest apis",
@@ -111,33 +157,41 @@ func CmdTest(ctx *cli.Context) {
 		parrot.Info("Info")
 		parrot.Debug("Debug", "is", "a", "nice", "thing")
 		parrot.Warn("Attenction", "please", nil)
-
+		parrot.Error("This is an error", "my friend", "!")
+		Parse()
 	})
 }
 
 func CmdServe(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		parrot.Info("Serving gadget for REST Apis on port", settings.RestPort())
+		parrot.Println("Serving gadget for REST Apis on port", settings.RestPort())
 		serve()
 	})
 }
 
 func CmdRevive(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		parrot.Warn("Reviving gadget will reinitialize all the datas.")
+		parrot.Debug("Reviving gadget will reinitialize all the datas.")
 
 		repository.BackupSchema()
 		repository.InitSchema()
+
+		parrot.Println("Gadget revived")
 	})
 }
 
 func CmdLabels(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		var images = repository.GetAll()
+		var ii = ImageLabels{}
+		var iis = [][]string{}
 
-		for _, img := range images {
-			parrot.Info("[" + img.ID + "] - " + strings.Join(img.RepoTags, ", ") + " [" + strconv.Itoa(len(img.Labels)) + "]")
+		for _, img := range repository.GetAll() {
+			for _, r := range AsImageLabels(img).Rows() {
+				iis = append(iis, r)
+			}
 		}
+
+		parrot.TablePrint(ii.Header(), iis)
 	})
 }
 
@@ -151,15 +205,130 @@ func CmdLabelsById(ctx *cli.Context) {
 
 		var img = repository.Get(id)
 
-		if len(img.Labels) == 0 {
-			parrot.Info("[" + img.ID + "] - No labels defined")
-		} else {
-			parrot.Info("[" + img.ID + "] - " + asJson(img.Labels))
+		var ii = ImageLabels{}
+		var iis = [][]string{}
+
+		for _, r := range AsImageLabels(img).Rows() {
+			iis = append(iis, r)
 		}
+
+		parrot.TablePrint(ii.Header(), iis)
 	})
 }
 
 func CmdLabelsByTag(ctx *cli.Context) {
+	commandWrapper(ctx, func() {
+		id, err := stringFromArguments(ctx)
+		if err != nil {
+			parrot.Error("Error...", err)
+			return
+		}
+
+		var img = repository.FindByTag(id)
+
+		var ii = ImageLabels{}
+		var iis = [][]string{}
+
+		for _, r := range AsImageLabels(img).Rows() {
+			iis = append(iis, r)
+		}
+
+		parrot.TablePrint(ii.Header(), iis)
+	})
+}
+
+// Volumes
+func CmdInfo(ctx *cli.Context) {
+	commandWrapper(ctx, func() {
+		var ii = ImageDetail{}
+		var iis = [][]string{}
+
+		for _, img := range repository.GetAll() {
+			for _, r := range AsImageDetail(img).Rows() {
+				iis = append(iis, r)
+			}
+		}
+
+		parrot.TablePrint(ii.Header(), iis)
+
+	})
+}
+
+func CmdInfoById(ctx *cli.Context) {
+	commandWrapper(ctx, func() {
+		id, err := stringFromArguments(ctx)
+		if err != nil {
+			parrot.Error("Error...", err)
+			return
+		}
+
+		var img = repository.Get(id)
+
+		var ii = ImageDetail{}
+		var iis = [][]string{}
+
+		for _, r := range AsImageDetail(img).Rows() {
+			iis = append(iis, r)
+		}
+
+		parrot.TablePrint(ii.Header(), iis)
+
+	})
+}
+
+func CmdInfoByTag(ctx *cli.Context) {
+	commandWrapper(ctx, func() {
+		id, err := stringFromArguments(ctx)
+		if err != nil {
+			parrot.Error("Error...", err)
+			return
+		}
+
+		var img = repository.FindByTag(id)
+
+		var ii = ImageDetail{}
+		var iis = [][]string{}
+
+		for _, r := range AsImageDetail(img).Rows() {
+			iis = append(iis, r)
+		}
+
+		parrot.TablePrint(ii.Header(), iis)
+
+	})
+}
+
+// Volumes
+func CmdVolumes(ctx *cli.Context) {
+	commandWrapper(ctx, func() {
+		var images = repository.GetAll()
+
+		for _, img := range images {
+			var id = TruncateID(img.ID)
+			parrot.Info("[" + id + "] - " + strings.Join(img.RepoTags, ", ") + " [" + strconv.Itoa(1) + "]")
+		}
+	})
+}
+
+func CmdVolumesById(ctx *cli.Context) {
+	commandWrapper(ctx, func() {
+		id, err := stringFromArguments(ctx)
+		if err != nil {
+			parrot.Error("Error...", err)
+			return
+		}
+
+		var img = repository.Get(id)
+
+		if len(img.Labels) == 0 {
+			parrot.Info("[" + id + "] - No labels defined")
+		} else {
+			parrot.Info("[" + id + "] - " + asJson(img.Labels))
+		}
+	})
+}
+
+func CmdVolumesByTag(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
 		id, err := stringFromArguments(ctx)
 		if err != nil {
@@ -181,25 +350,38 @@ func CmdBuild(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
 		endpoint := "unix:///var/run/docker.sock"
 		client, _ := docker.NewClient(endpoint)
+
 		imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
+		var c = 0
+
 		for _, img := range imgs {
-			if !repository.Exists(img.ID) {
+			var id = TruncateID(img.ID)
+			if !repository.Exists(id) {
 				repository.Put(img)
-				parrot.Info("["+img.ID+"] - ", strings.Join(img.RepoTags, ", "), "added to bucket")
+				c = c + 1
+				parrot.Debug("["+id+"] - ", strings.Join(img.RepoTags, ", "), "added to bucket")
 			} else {
-				parrot.Debug("["+img.ID+"] - ", strings.Join(img.RepoTags, ", "), " not inserted in bucket because already exists")
+				parrot.Debug("["+id+"] - ", strings.Join(img.RepoTags, ", "), " not inserted in bucket because already exists")
 			}
 		}
+
+		parrot.Println("Added " + strconv.Itoa(c) + " images")
 	})
 }
 
 func CmdList(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
 		imgs := repository.GetAll()
+		var iis = [][]string{}
+		var ii = ImageInfo{}
 		for _, img := range imgs {
-			parrot.Info("[" + img.ID + "] - " + strings.Join(img.RepoTags, ", ") + asJson(img))
-
+			for _, r := range AsImageInfo(img).Rows() {
+				iis = append(iis, r)
+			}
 		}
+
+		parrot.TablePrint(ii.Header(), iis)
+
 	})
 }
 

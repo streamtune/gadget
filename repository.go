@@ -2,10 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	//	"fmt"
 	"os"
 	"path/filepath"
-	//	"strconv"
 	"strings"
 
 	"github.com/boltdb/bolt"
@@ -25,13 +23,13 @@ func repositoryFullName() string {
 func (r *Repository) InitDB() {
 	var err error
 
-	b, err := existsPath(settings.RepositoryDirectory())
+	b, err := pathUtils.ExistsPath(settings.RepositoryDirectory())
 	if err != nil {
 		parrot.Error("Got error when reading repository directory", err)
 	}
 
 	if !b {
-		createPath(settings.RepositoryDirectory())
+		pathUtils.CreatePath(settings.RepositoryDirectory())
 	}
 
 	r.DB, err = bolt.Open(repositoryFullName(), 0600, nil)
@@ -73,7 +71,7 @@ func (r *Repository) CloseDB() {
 }
 
 func (r *Repository) BackupSchema() {
-	b, _ := existsPath(settings.RepositoryDirectory())
+	b, _ := pathUtils.ExistsPath(settings.RepositoryDirectory())
 	if !b {
 		return
 	}
@@ -91,7 +89,9 @@ func (r *Repository) Put(img docker.APIImages) {
 	err := r.DB.Update(func(tx *bolt.Tx) error {
 		cc := tx.Bucket([]byte("Images"))
 
-		parrot.Debug("[" + asJson(img.RepoTags) + "] adding as " + img.ID)
+		var id = TruncateID(img.ID)
+
+		parrot.Debug("[" + asJson(img.RepoTags) + "] adding as " + id)
 
 		encoded1, err := json.Marshal(img)
 
@@ -99,7 +99,7 @@ func (r *Repository) Put(img docker.APIImages) {
 			return err
 		}
 
-		err = cc.Put([]byte(img.ID), encoded1)
+		err = cc.Put([]byte(id), encoded1)
 
 		if err != nil {
 			return err
@@ -109,7 +109,7 @@ func (r *Repository) Put(img docker.APIImages) {
 		ii := tx.Bucket([]byte("TagsIndex"))
 
 		for _, tag := range img.RepoTags {
-			err = ii.Put([]byte(tag), []byte(img.ID))
+			err = ii.Put([]byte(tag), []byte(id))
 
 			if err != nil {
 				return err
@@ -118,22 +118,14 @@ func (r *Repository) Put(img docker.APIImages) {
 
 		// Adding Labels
 		ll := tx.Bucket([]byte("LabelsIndex"))
-		/*
-			parrot.Info("--> " + asJson(img.Labels))
-			parrot.Info("# keys" + strconv.Itoa(len(img.Labels)))
-		*/
 		for k, v := range img.Labels {
 			var labelIndex = LabelIndex{}
 
-			//parrot.Info("[k, v] " + k + ", " + v)
 			labelIndex.Label = k + ":" + v
-			//parrot.Info("[labelIndex] " + asJson(labelIndex))
 
 			parrot.Debug("[" + labelIndex.Label + "] currentLabel.")
 
 			lbi := ll.Get([]byte(labelIndex.Label))
-
-			//fmt.Println("lbi --> ", lbi)
 
 			if len(lbi) != 0 {
 				err := json.Unmarshal(lbi, &labelIndex)
@@ -144,8 +136,7 @@ func (r *Repository) Put(img docker.APIImages) {
 				parrot.Debug("[ found ] " + asJson(labelIndex.Ids))
 			}
 
-			labelIndex.Ids = append(labelIndex.Ids, img.ID)
-			//parrot.Info("-----> Added ID " + asJson(labelIndex))
+			labelIndex.Ids = append(labelIndex.Ids, id)
 			encoded1, err := json.Marshal(labelIndex)
 
 			if err != nil {
@@ -153,8 +144,6 @@ func (r *Repository) Put(img docker.APIImages) {
 			}
 
 			err = ll.Put([]byte(labelIndex.Label), []byte(encoded1))
-
-			//parrot.Info("-----> Inserted into bucket")
 
 			if err != nil {
 				return err
