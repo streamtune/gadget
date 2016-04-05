@@ -46,7 +46,7 @@ func (r *Repository) InitSchema() error {
 			return err
 		}
 
-		_, err := tx.CreateBucketIfNotExists([]byte("ImagesDetails"))
+		_, err = tx.CreateBucketIfNotExists([]byte("ImagesDetails"))
 		if err != nil {
 			parrot.Error("Create bucket: ImagesDetails", err)
 			return err

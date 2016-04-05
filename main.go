@@ -182,12 +182,24 @@ func CmdRevive(ctx *cli.Context) {
 
 func CmdUpdate(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		endpoint := settings.DockerEndpoint()
+		endpoint := settings.LocalDockerEndpoint()
 		client, _ := docker.NewClient(endpoint)
 
+		if settings.UseDockerMachine() {
+			endpoint = settings.MachineDockerEndpoint()
+
+			parrot.Debug("Configuring client for tls")
+
+			client, _ = docker.NewTLSClient(endpoint,
+				settings.MachineDockerCertFile(),
+				settings.MachineDockerKeyFile(),
+				settings.MachineDockerCAFile())
+		}
+
 		imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
-		
-		client.
+
+		parrot.Debug("Images found: ", asJson(imgs))
+
 		var c = 0
 
 		for _, img := range imgs {
@@ -326,16 +338,18 @@ func CmdInfoByTag(ctx *cli.Context) {
 // Volumes
 func CmdVolumes(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		var ii = ImageVolumes{}
-		var iis = [][]string{}
+		/*
+			var ii = ImageVolumes{}
+			var iis = [][]string{}
 
-		for _, img := range repository.GetAll() {
-			for _, r := range AsImageVolumes(img).Rows() {
-				iis = append(iis, r)
+			for _, img := range repository.GetAll() {
+				for _, r := range AsImageVolumes(img).Rows() {
+					iis = append(iis, r)
+				}
 			}
-		}
 
-		parrot.TablePrint(ii.Header(), iis)
+			parrot.TablePrint(ii.Header(), iis)
+		*/
 	})
 }
 
