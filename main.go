@@ -50,10 +50,10 @@ func main() {
 
 	app.Commands = []cli.Command{
 		{
-			Name:    "build",
-			Aliases: []string{"bu"},
-			Usage:   "build",
-			Action:  CmdBuild,
+			Name:    "update",
+			Aliases: []string{"up"},
+			Usage:   "update the database",
+			Action:  CmdUpdate,
 		},
 		{
 			Name:    "list",
@@ -180,6 +180,31 @@ func CmdRevive(ctx *cli.Context) {
 	})
 }
 
+func CmdUpdate(ctx *cli.Context) {
+	commandWrapper(ctx, func() {
+		endpoint := settings.DockerEndpoint()
+		client, _ := docker.NewClient(endpoint)
+
+		imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
+		
+		client.
+		var c = 0
+
+		for _, img := range imgs {
+			var id = TruncateID(img.ID)
+			if !repository.Exists(id) {
+				repository.Put(img)
+				c = c + 1
+				parrot.Debug("["+id+"] - ", strings.Join(img.RepoTags, ", "), "added to bucket")
+			} else {
+				parrot.Debug("["+id+"] - ", strings.Join(img.RepoTags, ", "), " not inserted in bucket because already exists")
+			}
+		}
+
+		parrot.Println("Added " + strconv.Itoa(c) + " images")
+	})
+}
+
 func CmdLabels(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
 		var ii = ImageLabels{}
@@ -301,12 +326,16 @@ func CmdInfoByTag(ctx *cli.Context) {
 // Volumes
 func CmdVolumes(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		var images = repository.GetAll()
+		var ii = ImageVolumes{}
+		var iis = [][]string{}
 
-		for _, img := range images {
-			var id = TruncateID(img.ID)
-			parrot.Info("[" + id + "] - " + strings.Join(img.RepoTags, ", ") + " [" + strconv.Itoa(1) + "]")
+		for _, img := range repository.GetAll() {
+			for _, r := range AsImageVolumes(img).Rows() {
+				iis = append(iis, r)
+			}
 		}
+
+		parrot.TablePrint(ii.Header(), iis)
 	})
 }
 
@@ -343,29 +372,6 @@ func CmdVolumesByTag(ctx *cli.Context) {
 		} else {
 			parrot.Info("[" + id + "] - " + asJson(img.Labels))
 		}
-	})
-}
-
-func CmdBuild(ctx *cli.Context) {
-	commandWrapper(ctx, func() {
-		endpoint := "unix:///var/run/docker.sock"
-		client, _ := docker.NewClient(endpoint)
-
-		imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
-		var c = 0
-
-		for _, img := range imgs {
-			var id = TruncateID(img.ID)
-			if !repository.Exists(id) {
-				repository.Put(img)
-				c = c + 1
-				parrot.Debug("["+id+"] - ", strings.Join(img.RepoTags, ", "), "added to bucket")
-			} else {
-				parrot.Debug("["+id+"] - ", strings.Join(img.RepoTags, ", "), " not inserted in bucket because already exists")
-			}
-		}
-
-		parrot.Println("Added " + strconv.Itoa(c) + " images")
 	})
 }
 

@@ -11,6 +11,7 @@ type Configuration struct {
 	DebugMode           bool
 	RestServerMode      string
 	RestPort            int
+	DockerEndpoint      string
 }
 
 type Settings struct {
@@ -33,6 +34,7 @@ func (sts *Settings) LoadSettings() {
 		sts.configs.DebugMode = ConstDebugMode
 		sts.configs.RestServerMode = ConstRestServerMode
 		sts.configs.RestPort = ConstRestPort
+		sts.configs.DockerEndpoint = ConstDockerEndpoint
 
 	} else {
 		json.Unmarshal(file, &sts.configs)
@@ -61,6 +63,10 @@ func (sts Settings) RestServerMode() string {
 
 func (sts Settings) RestPort() int {
 	return sts.configs.RestPort
+}
+
+func (sts Settings) DockerEndpoint() string {
+	return sts.configs.DockerEndpoint
 }
 
 func (sts Settings) String() string {

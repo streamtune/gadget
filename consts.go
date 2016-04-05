@@ -5,3 +5,4 @@ const ConstRepositoryFile string = "gadget.db"
 const ConstDebugMode bool = false
 const ConstRestServerMode string = "debug"
 const ConstRestPort int = 9080
+const ConstDockerEndpoint string = "unix:///var/run/docker.sock"

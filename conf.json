@@ -1,7 +1,8 @@
 {
-  "repositoryDirectory": "tmp",
-  "repositoryFile": "gadget.db",
-  "debugMode": false,
-  "restServerMode": "release",
-  "restPort": 9080
+	"repositoryDirectory": "tmp",
+	"repositoryFile": "gadget.db",
+	"debugMode": false,
+	"restServerMode": "release",
+	"restPort": 9080,
+	"dockerEndpoint" : "unix:///var/run/docker.sock"
 }

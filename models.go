@@ -79,7 +79,7 @@ func (c ImageLabels) Rows() [][]string {
 	var rs = [][]string{}
 
 	for k, v := range c.Labels {
-		rs = append(rs, []string{c.ID, k + "|" + v})
+		rs = append(rs, []string{c.ID, "'" + k + "'" + ":'" + v + "'"})
 	}
 
 	return rs
@@ -94,6 +94,41 @@ func AsImageLabels(img docker.APIImages) ImageLabels {
 func (ii *ImageLabels) Build(img docker.APIImages) {
 	ii.ID = TruncateID(img.ID)
 	ii.Labels = img.Labels
+}
+
+// -----------------
+
+// -----------------
+
+// ImageVolumes
+type ImageVolumes struct {
+	ID      string              `json:id`
+	Volumes map[string]struct{} `json:volumes`
+}
+
+func (c ImageVolumes) Header() []string {
+	return []string{"ID", "VOLUME"}
+}
+
+func (c ImageVolumes) Rows() [][]string {
+	var rs = [][]string{}
+
+	for k, v := range c.Volumes {
+		rs = append(rs, []string{c.ID, "'" + k + "'" + ":'" + asJson(v) + "'"})
+	}
+
+	return rs
+}
+
+func AsImageVolumes(img docker.Image) ImageVolumes {
+	var i = ImageVolumes{}
+	i.Build(img)
+	return i
+}
+
+func (ii *ImageVolumes) Build(img docker.Image) {
+	ii.ID = TruncateID(img.ID)
+	ii.Volumes = img.ContainerConfig.Volumes
 }
 
 // -----------------
