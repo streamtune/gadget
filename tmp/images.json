@@ -1,0 +1,53 @@
+{  
+   "Id":"sha256:ef74b4bb871507daa3a544c31dbe644709c54e321a43105db2b055ecadeda3a1",
+   "RepoTags":[  
+      "gi4nks/sample:latest"
+   ],
+   "RepoDigests":[  
+
+   ],
+   "Parent":"sha256:1f395cfd519aee18fdeac061e51779cecd392bd9daeee00bce50bd77a6abf46c",
+   "Comment":"",
+   "Created":"2016-03-16T10:54:05.621547186Z",
+   "Container":"212a372e03fffa506a84f869b2825c70194cb7b3169a5519a1442fa0dd0a517c",
+   "ContainerConfig":{  
+      "Hostname":"eb5360903655",
+      "Domainname":"",
+      "User":"",
+      "AttachStdin":false,
+      "AttachStdout":false,
+      "AttachStderr":false,
+      "Tty":false,
+      "OpenStdin":false,
+      "StdinOnce":false,
+      "Env":[  
+         "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      ],
+      "Cmd":[  
+         "/bin/sh",
+         "-c",
+         "#(nop) WORKDIR /data"
+      ],
+      "Image":"sha256:1f395cfd519aee18fdeac061e51779cecd392bd9daeee00bce50bd77a6abf46c",
+      "Volumes":null,
+      "WorkingDir":"/data",
+      "Entrypoint":null,
+      "OnBuild":[  ],
+      "Labels":{  
+         "com.example.is-beta":"",
+         "com.example.is-production":"",
+         "com.example.release-date":"2015-02-12",
+         "com.example.version":"0.0.1-beta",
+         "vendor":"ACME Incorporated"
+      }
+   },
+   "DockerVersion":"1.10.3",
+   "Author":"",
+   "Config":{  },
+   "Architecture":"amd64",
+   "Os":"linux",
+   "Size":4797951,
+   "VirtualSize":4797951,
+   "GraphDriver":{  }
+}
+

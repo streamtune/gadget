@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,7 +36,7 @@ func GetImages(c *gin.Context) {
 	var images = repository.GetAll()
 
 	for _, img := range images {
-		parrot.Debug("[" + img.ID + "] - " + strings.Join(img.RepoTags, ", ") + " [" + strconv.Itoa(len(img.Labels)) + "]")
+		parrot.Debug("[" + img.ImageId + "] - [" + strconv.Itoa(len(img.Tags)) + "] [" + strconv.Itoa(len(img.Labels)) + "]")
 	}
 
 	if len(images) == 0 {
@@ -49,63 +48,71 @@ func GetImages(c *gin.Context) {
 
 func GetLabelByRepoTag(c *gin.Context) {
 	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/images/
-	tag := c.Param("tag")
-	repo := c.Param("repo")
+	/*
+		tag := c.Param("tag")
+		repo := c.Param("repo")
 
-	var img = repository.FindByTag(repo + "/" + tag)
+		var img = repository.FindByTag(repo + "/" + tag)
 
-	parrot.Debug("[" + tag + "] - " + asJson(img.Labels) + " [" + strconv.Itoa(len(img.Labels)) + "]")
+		parrot.Debug("[" + tag + "] - " + asJson(img.Labels) + " [" + strconv.Itoa(len(img.Labels)) + "]")
 
-	if len(img.Labels) == 0 {
-		c.Status(http.StatusNoContent)
-	} else {
-		c.JSON(http.StatusOK, img.Labels)
-	}
+		if len(img.Labels) == 0 {
+			c.Status(http.StatusNoContent)
+		} else {
+			c.JSON(http.StatusOK, img.Labels)
+		}
+	*/
 }
 
 func GetLabelByTag(c *gin.Context) {
 	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/images/
-	repo := c.Param("repo")
+	/*
+		repo := c.Param("repo")
 
-	var img = repository.FindByTag(repo)
+		var img = repository.FindByTag(repo)
 
-	parrot.Debug("[" + repo + "] - " + asJson(img.Labels) + " [" + strconv.Itoa(len(img.Labels)) + "]")
+		parrot.Debug("[" + repo + "] - " + asJson(img.Labels) + " [" + strconv.Itoa(len(img.Labels)) + "]")
 
-	if len(img.Labels) == 0 {
-		c.Status(http.StatusNoContent)
-	} else {
-		c.JSON(http.StatusOK, img.Labels)
-	}
+		if len(img.Labels) == 0 {
+			c.Status(http.StatusNoContent)
+		} else {
+			c.JSON(http.StatusOK, img.Labels)
+		}
+	*/
 }
 
 func GetLabelsIndexes(c *gin.Context) {
 	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/labelsIndexes
-	var labelsIndexes = repository.GetLabelsIndexes()
+	/*
+		var labelsIndexes = repository.GetLabelsIndexes()
 
-	for _, lbl := range labelsIndexes {
-		parrot.Debug("[" + lbl.Label + "] - " + strings.Join(lbl.Ids, ", "))
-	}
+		for _, lbl := range labelsIndexes {
+			parrot.Debug("[" + lbl.Label + "] - " + strings.Join(lbl.Ids, ", "))
+		}
 
-	if len(labelsIndexes) == 0 {
-		c.Status(http.StatusNoContent)
-	} else {
-		c.JSON(http.StatusOK, labelsIndexes)
-	}
+		if len(labelsIndexes) == 0 {
+			c.Status(http.StatusNoContent)
+		} else {
+			c.JSON(http.StatusOK, labelsIndexes)
+		}
+	*/
 }
 
 func GetImagesByLabel(c *gin.Context) {
 	// curl --data "lbl=vendor" -H "Content-Type: application/json" http://localhost:9080/api/v1/labelsIndexes
-	lbl := c.PostForm("lbl")
+	/*
+		lbl := c.PostForm("lbl")
 
-	var images = repository.GetImagesByLabel(lbl)
+		var images = repository.GetImagesByLabel(lbl)
 
-	for _, img := range images {
-		parrot.Debug("[" + img.ID + "] - " + strings.Join(img.RepoTags, ", ") + " [" + strconv.Itoa(len(img.Labels)) + "]")
-	}
+		for _, img := range images {
+			parrot.Debug("[" + img.ID + "] - " + strings.Join(img.RepoTags, ", ") + " [" + strconv.Itoa(len(img.Labels)) + "]")
+		}
 
-	if len(images) == 0 {
-		c.Status(http.StatusNoContent)
-	} else {
-		c.JSON(http.StatusOK, images)
-	}
+		if len(images) == 0 {
+			c.Status(http.StatusNoContent)
+		} else {
+			c.JSON(http.StatusOK, images)
+		}
+	*/
 }

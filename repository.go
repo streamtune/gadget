@@ -1,17 +1,28 @@
 package main
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/boltdb/bolt"
 	"github.com/fsouza/go-dockerclient"
+
+	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
+
+	"github.com/pivotal-golang/bytefmt"
 )
 
+/*
+const CREATE_IMAGES_TABLE_STMT string = "CREATE TABLE Images (	ID TEXT NOT NULL, Size TEXT, VirtualSize TEXT, Created TEXT, ParentID TEXT, PRIMARY KEY(ID));"
+const CREATE_LABELS_TABLE_STMT string = "CREATE TABLE Labels (ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Key TEXT, Value TEXT, ImgID TEXT NOT NULL, FOREIGN KEY(ImgID) REFERENCES Images(ID))"
+const CREATE_TAGS_TABLE_STMT string = "CREATE TABLE Labels (ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Key TEXT, Value TEXT, ImgID TEXT NOT NULL, FOREIGN KEY(ImgID) REFERENCES Images(ID))"
+*/
+
 type Repository struct {
-	DB *bolt.DB
+	DB *gorm.DB
 }
 
 // HELPER FUNCTIONS
@@ -32,42 +43,32 @@ func (r *Repository) InitDB() {
 		pathUtils.CreatePath(settings.RepositoryDirectory())
 	}
 
-	r.DB, err = bolt.Open(repositoryFullName(), 0600, nil)
+	r.DB, err = gorm.Open("sqlite3", repositoryFullName())
 	if err != nil {
 		parrot.Error("Got error creating repository directory", err)
 	}
 }
 
-func (r *Repository) InitSchema() error {
-	err := r.DB.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("Images"))
-		if err != nil {
-			parrot.Error("Create bucket: Images", err)
-			return err
-		}
+func (r *Repository) InitSchema() {
 
-		_, err = tx.CreateBucketIfNotExists([]byte("ImagesDetails"))
-		if err != nil {
-			parrot.Error("Create bucket: ImagesDetails", err)
-			return err
-		}
+	if r.DB.HasTable(&ImageTag{}) {
+		parrot.Debug("ImageTag already exists, removing it")
+		r.DB.DropTable(&ImageTag{})
+	}
 
-		_, err = tx.CreateBucketIfNotExists([]byte("TagsIndex"))
-		if err != nil {
-			parrot.Error("Create bucket: TagsIndex", err)
-			return err
-		}
+	if r.DB.HasTable(&ImageLabel{}) {
+		parrot.Debug("ImageLabel already exists, removing it")
+		r.DB.DropTable(&ImageLabel{})
+	}
 
-		_, err = tx.CreateBucketIfNotExists([]byte("LabelsIndex"))
-		if err != nil {
-			parrot.Error("Create bucket: LabelsIndex", err)
-			return err
-		}
+	if r.DB.HasTable(&Image{}) {
+		parrot.Debug("Image already exists, removing it")
+		r.DB.DropTable(&Image{})
+	}
 
-		return nil
-	})
-
-	return err
+	r.DB.CreateTable(&Image{})
+	r.DB.CreateTable(&ImageLabel{})
+	r.DB.CreateTable(&ImageTag{})
 }
 
 func (r *Repository) CloseDB() {
@@ -92,124 +93,77 @@ func (r *Repository) BackupSchema() {
 // functionalities
 
 func (r *Repository) Put(img docker.APIImages) {
-	err := r.DB.Update(func(tx *bolt.Tx) error {
-		cc := tx.Bucket([]byte("Images"))
+	parrot.Debug("[" + asJson(img.RepoTags) + "] adding as " + TruncateID(img.ID))
 
-		var id = TruncateID(img.ID)
+	var image = Image{}
+	image.ImageId = TruncateID(img.ID)
+	image.ImageLongId = img.ID
 
-		parrot.Debug("[" + asJson(img.RepoTags) + "] adding as " + id)
+	image.CreatedAt = img.Created
+	image.Size = bytefmt.ByteSize(uint64(img.Size))
+	image.VirtualSize = bytefmt.ByteSize(uint64(img.VirtualSize))
 
-		encoded1, err := json.Marshal(img)
+	image.Labels = []ImageLabel{}
+	image.Tags = []ImageTag{}
 
-		if err != nil {
-			return err
-		}
+	image.Blob = asJson(img)
 
-		err = cc.Put([]byte(id), encoded1)
+	// Adding tags
+	for _, tag := range img.RepoTags {
+		var imageTag = ImageTag{}
 
-		if err != nil {
-			return err
-		}
+		imageTag.ImageId = image.ID
+		imageTag.Name = strings.Split(tag, ":")[0]
+		imageTag.Version = strings.Split(tag, ":")[1]
 
-		// Adding tags
-		ii := tx.Bucket([]byte("TagsIndex"))
-
-		for _, tag := range img.RepoTags {
-			err = ii.Put([]byte(tag), []byte(id))
-
-			if err != nil {
-				return err
-			}
-		}
-
-		// Adding Labels
-		ll := tx.Bucket([]byte("LabelsIndex"))
-		for k, v := range img.Labels {
-			var labelIndex = LabelIndex{}
-
-			labelIndex.Label = k + ":" + v
-
-			parrot.Debug("[" + labelIndex.Label + "] currentLabel.")
-
-			lbi := ll.Get([]byte(labelIndex.Label))
-
-			if len(lbi) != 0 {
-				err := json.Unmarshal(lbi, &labelIndex)
-				if err != nil {
-					return err
-				}
-
-				parrot.Debug("[ found ] " + asJson(labelIndex.Ids))
-			}
-
-			labelIndex.Ids = append(labelIndex.Ids, id)
-			encoded1, err := json.Marshal(labelIndex)
-
-			if err != nil {
-				return err
-			}
-
-			err = ll.Put([]byte(labelIndex.Label), []byte(encoded1))
-
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		parrot.Error("Error inserting data", err)
+		image.Tags = append(image.Tags, imageTag)
 	}
+
+	// Adding labels
+	for k, v := range img.Labels {
+		var imageLabel = ImageLabel{}
+
+		imageLabel.ImageId = image.ID
+		imageLabel.Key = k
+		imageLabel.Value = v
+		imageLabel.Label = k + ":" + v
+		parrot.Debug("[" + imageLabel.Label + "] currentLabel.")
+
+		image.Labels = append(image.Labels, imageLabel)
+	}
+
+	r.DB.Create(&image)
 }
 
-func (r *Repository) GetAll() []docker.APIImages {
-	images := []docker.APIImages{}
-
-	r.DB.View(func(tx *bolt.Tx) error {
-		cc := tx.Bucket([]byte("Images"))
-		c := cc.Cursor()
-
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			var image = docker.APIImages{}
-			err := json.Unmarshal(v, &image)
-			if err != nil {
-				return err
-			}
-
-			images = append(images, image)
-		}
-
-		return nil
-	})
+func (r *Repository) GetAll() []Image {
+	images := []Image{}
+	r.DB.Find(&images)
 
 	return images
 }
 
-func (r *Repository) Get(id string) docker.APIImages {
-	var image = docker.APIImages{}
-
-	err := r.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("Images"))
-		v := b.Get([]byte(id))
-
-		err := json.Unmarshal(v, &image)
-
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		parrot.Error("Error getting data", err)
-	}
+func (r *Repository) Get(id string) Image {
+	var image = Image{}
+	r.DB.Where("ImageId = ?", id).First(&image)
 
 	return image
 }
 
+func (r *Repository) Exists(id string) bool {
+	var image = Image{}
+	var count = -1
+
+	r.DB.Where("ImageId = ?", id).First(&image).Count(&count)
+
+	if count == 0 {
+		//parrot.Error("Error getting data", err)
+		return false
+	}
+
+	return true
+}
+
+/*
 func (r *Repository) FindByTag(tag string) docker.APIImages {
 	var image = docker.APIImages{}
 
@@ -320,6 +274,7 @@ func (r *Repository) GetImagesByLabel(lbl string) []docker.APIImages {
 
 	return images
 }
+*/
 
 /*
 func (r *Repository) FindById(id string) Command {
@@ -411,49 +366,3 @@ func (r *Repository) GetExecutedCommands(count int) []ExecutedCommand {
 	return executedCommands
 }
 */
-
-func extendAPIImages(slice []docker.APIImages, element docker.APIImages) []docker.APIImages {
-	n := len(slice)
-	if n == cap(slice) {
-		// Slice is full; must grow.
-		// We double its size and add 1, so if the size is zero we still grow.
-		newSlice := make([]docker.APIImages, len(slice), 2*len(slice)+1)
-		copy(newSlice, slice)
-		slice = newSlice
-	}
-	slice = slice[0 : n+1]
-	slice[n] = element
-	return slice
-}
-
-// Append appends the items to the slice.
-// First version: just loop calling Extend.
-func appendAPIImages(slice []docker.APIImages, items ...docker.APIImages) []docker.APIImages {
-	for _, item := range items {
-		slice = extendAPIImages(slice, item)
-	}
-	return slice
-}
-
-func extendLabelIndex(slice []LabelIndex, element LabelIndex) []LabelIndex {
-	n := len(slice)
-	if n == cap(slice) {
-		// Slice is full; must grow.
-		// We double its size and add 1, so if the size is zero we still grow.
-		newSlice := make([]LabelIndex, len(slice), 2*len(slice)+1)
-		copy(newSlice, slice)
-		slice = newSlice
-	}
-	slice = slice[0 : n+1]
-	slice[n] = element
-	return slice
-}
-
-// Append appends the items to the slice.
-// First version: just loop calling Extend.
-func appendLabelIndex(slice []LabelIndex, items ...LabelIndex) []LabelIndex {
-	for _, item := range items {
-		slice = extendLabelIndex(slice, item)
-	}
-	return slice
-}

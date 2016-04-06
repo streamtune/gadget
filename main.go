@@ -219,16 +219,20 @@ func CmdUpdate(ctx *cli.Context) {
 
 func CmdLabels(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		var ii = ImageLabels{}
-		var iis = [][]string{}
+		//var ii = ImageLabel{}
+		//var iis = [][]string{}
 
-		for _, img := range repository.GetAll() {
-			for _, r := range AsImageLabels(img).Rows() {
-				iis = append(iis, r)
+		/*
+			for _, img := range repository.GetAll() {
+
+					for _, r := range AsImageLabels(img).Rows() {
+						iis = append(iis, r)
+					}
+
 			}
-		}
+		*/
 
-		parrot.TablePrint(ii.Header(), iis)
+		//parrot.TablePrint(ii.Header(), iis)
 	})
 }
 
@@ -240,16 +244,21 @@ func CmdLabelsById(ctx *cli.Context) {
 			return
 		}
 
-		var img = repository.Get(id)
+		parrot.Debug("ID", id)
+		/*
 
-		var ii = ImageLabels{}
-		var iis = [][]string{}
+			var img = repository.Get(id)
 
-		for _, r := range AsImageLabels(img).Rows() {
-			iis = append(iis, r)
-		}
 
-		parrot.TablePrint(ii.Header(), iis)
+			var ii = ImageLabels{}
+			var iis = [][]string{}
+
+			for _, r := range AsImageLabels(img).Rows() {
+				iis = append(iis, r)
+			}
+
+			parrot.TablePrint(ii.Header(), iis)
+		*/
 	})
 }
 
@@ -261,33 +270,38 @@ func CmdLabelsByTag(ctx *cli.Context) {
 			return
 		}
 
-		var img = repository.FindByTag(id)
+		parrot.Debug("ID", id)
 
-		var ii = ImageLabels{}
-		var iis = [][]string{}
+		/*
+			var img = repository.FindByTag(id)
 
-		for _, r := range AsImageLabels(img).Rows() {
-			iis = append(iis, r)
-		}
+			var ii = ImageLabels{}
+			var iis = [][]string{}
 
-		parrot.TablePrint(ii.Header(), iis)
+			for _, r := range AsImageLabels(img).Rows() {
+				iis = append(iis, r)
+			}
+
+			parrot.TablePrint(ii.Header(), iis)
+		*/
 	})
 }
 
 // Volumes
 func CmdInfo(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		var ii = ImageDetail{}
-		var iis = [][]string{}
+		/*
+			var ii = ImageDetail{}
+			var iis = [][]string{}
 
-		for _, img := range repository.GetAll() {
-			for _, r := range AsImageDetail(img).Rows() {
-				iis = append(iis, r)
+			for _, img := range repository.GetAll() {
+				for _, r := range AsImageDetail(img).Rows() {
+					iis = append(iis, r)
+				}
 			}
-		}
 
-		parrot.TablePrint(ii.Header(), iis)
-
+			parrot.TablePrint(ii.Header(), iis)
+		*/
 	})
 }
 
@@ -299,17 +313,20 @@ func CmdInfoById(ctx *cli.Context) {
 			return
 		}
 
-		var img = repository.Get(id)
+		parrot.Debug("ID", id)
 
-		var ii = ImageDetail{}
-		var iis = [][]string{}
+		/*
+			var img = repository.Get(id)
 
-		for _, r := range AsImageDetail(img).Rows() {
-			iis = append(iis, r)
-		}
+			var ii = ImageDetail{}
+			var iis = [][]string{}
 
-		parrot.TablePrint(ii.Header(), iis)
+			for _, r := range AsImageDetail(img).Rows() {
+				iis = append(iis, r)
+			}
 
+			parrot.TablePrint(ii.Header(), iis)
+		*/
 	})
 }
 
@@ -321,17 +338,21 @@ func CmdInfoByTag(ctx *cli.Context) {
 			return
 		}
 
-		var img = repository.FindByTag(id)
+		parrot.Debug("ID", id)
 
-		var ii = ImageDetail{}
-		var iis = [][]string{}
+		/*
 
-		for _, r := range AsImageDetail(img).Rows() {
-			iis = append(iis, r)
-		}
+			var img = repository.FindByTag(id)
 
-		parrot.TablePrint(ii.Header(), iis)
+			var ii = ImageDetail{}
+			var iis = [][]string{}
 
+			for _, r := range AsImageDetail(img).Rows() {
+				iis = append(iis, r)
+			}
+
+			parrot.TablePrint(ii.Header(), iis)
+		*/
 	})
 }
 
@@ -379,29 +400,33 @@ func CmdVolumesByTag(ctx *cli.Context) {
 			return
 		}
 
-		var img = repository.FindByTag(id)
+		parrot.Debug("ID", id)
+		/*
+			var img = repository.FindByTag(id)
 
-		if len(img.Labels) == 0 {
-			parrot.Info("[" + id + "] - No labels defined")
-		} else {
-			parrot.Info("[" + id + "] - " + asJson(img.Labels))
-		}
+			if len(img.Labels) == 0 {
+				parrot.Info("[" + id + "] - No labels defined")
+			} else {
+				parrot.Info("[" + id + "] - " + asJson(img.Labels))
+			}
+		*/
 	})
 }
 
 func CmdList(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		imgs := repository.GetAll()
-		var iis = [][]string{}
-		var ii = ImageInfo{}
-		for _, img := range imgs {
-			for _, r := range AsImageInfo(img).Rows() {
-				iis = append(iis, r)
+		/*
+			imgs := repository.GetAll()
+			var iis = [][]string{}
+			var ii = ImageInfo{}
+			for _, img := range imgs {
+				for _, r := range AsImageInfo(img).Rows() {
+					iis = append(iis, r)
+				}
 			}
-		}
 
-		parrot.TablePrint(ii.Header(), iis)
-
+			parrot.TablePrint(ii.Header(), iis)
+		*/
 	})
 }
 
