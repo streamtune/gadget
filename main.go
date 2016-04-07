@@ -342,19 +342,18 @@ func CmdInfoByTag(ctx *cli.Context) {
 
 		parrot.Debug("ID", id)
 
-		/*
+		var images = repository.FindByTag(id)
 
-			var img = repository.FindByTag(id)
+		var header = Image{}
+		var iis = [][]string{}
 
-			var ii = ImageDetail{}
-			var iis = [][]string{}
-
-			for _, r := range AsImageDetail(img).Rows() {
+		for _, i := range images {
+			for _, r := range i.Rows() {
 				iis = append(iis, r)
 			}
+		}
 
-			parrot.TablePrint(ii.Header(), iis)
-		*/
+		parrot.TablePrint(header.Header(), iis)
 	})
 }
 

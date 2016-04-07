@@ -123,6 +123,7 @@ func (r *Repository) Put(img docker.APIImages) {
 
 		imageTag.Name = strings.Split(tag, ":")[0]
 		imageTag.Version = strings.Split(tag, ":")[1]
+		imageTag.Tag = tag
 
 		image.Tags = append(image.Tags, imageTag)
 	}
@@ -134,7 +135,6 @@ func (r *Repository) Put(img docker.APIImages) {
 		imageLabel.Key = k
 		imageLabel.Value = v
 		imageLabel.Label = k + ":" + v
-		parrot.Debug("[" + imageLabel.Label + "] currentLabel.")
 
 		image.Labels = append(image.Labels, imageLabel)
 	}
@@ -160,70 +160,51 @@ func (r *Repository) Exists(id string) bool {
 	var image = Image{}
 	var count = -1
 
-	parrot.Debug("Searching image with id", id)
-
 	r.DB.Where("short_id = ?", id).First(&image).Count(&count)
 
 	if count == 0 {
 		//parrot.Error("Error getting data", err)
 		return false
 	}
+	parrot.Debug("Searching image with id", id, " - ", count)
 
 	return true
 }
 
-/*
-func (r *Repository) FindByTag(tag string) docker.APIImages {
-	var image = docker.APIImages{}
+func (r *Repository) FindByShortId(id string) Image {
+	var image = Image{}
 
-	err := r.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("TagsIndex"))
-		v := b.Get([]byte(tag))
-
-		if v != nil {
-			cc := tx.Bucket([]byte("Images"))
-			img := cc.Get([]byte(v))
-
-			err := json.Unmarshal(img, &image)
-
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		parrot.Error("Error getting data", err)
-	}
+	r.DB.Where("short_id = ?", id).First(&image)
 
 	return image
 }
 
-func (r *Repository) Exists(id string) bool {
-	var image = docker.APIImages{}
+func (r *Repository) FindByLongId(id string) Image {
+	var image = Image{}
 
-	err := r.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("Images"))
-		v := b.Get([]byte(id))
+	r.DB.Where("long_id = ?", id).First(&image)
 
-		err := json.Unmarshal(v, &image)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		//parrot.Error("Error getting data", err)
-		return false
-	}
-
-	return true
+	return image
 }
 
+func (r *Repository) FindByTag(tag string) []Image {
+	var images = []Image{}
+	var imageTag = ImageTag{}
+
+	r.DB.Where("tag = ?", tag).First(&imageTag)
+
+	if &imageTag == nil {
+		parrot.Debug("No tag found")
+		return nil
+	}
+
+	r.DB.Model(&images).Where("id = ?", imageTag.ImageID).Preload("Tags").Preload("Labels").Find(&images)
+	parrot.Debug(asJson(images))
+
+	return images
+}
+
+/*
 func (r *Repository) GetLabelsIndexes() []LabelIndex {
 	labels := []LabelIndex{}
 
