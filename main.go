@@ -20,7 +20,6 @@ var pathUtils = quant.NewPathUtils()
 
 func initDB() {
 	repository.InitDB()
-	repository.InitSchema()
 }
 
 func closeDB() {
@@ -204,6 +203,9 @@ func CmdUpdate(ctx *cli.Context) {
 
 		for _, img := range imgs {
 			var id = TruncateID(img.ID)
+
+			parrot.Debug("ID is", id)
+
 			if !repository.Exists(id) {
 				repository.Put(img)
 				c = c + 1

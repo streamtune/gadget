@@ -36,7 +36,7 @@ func GetImages(c *gin.Context) {
 	var images = repository.GetAll()
 
 	for _, img := range images {
-		parrot.Debug("[" + img.ImageId + "] - [" + strconv.Itoa(len(img.Tags)) + "] [" + strconv.Itoa(len(img.Labels)) + "]")
+		parrot.Debug("[" + img.ShortId + "] - [" + strconv.Itoa(len(img.Tags)) + "] [" + strconv.Itoa(len(img.Labels)) + "]")
 	}
 
 	if len(images) == 0 {

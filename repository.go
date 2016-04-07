@@ -1,7 +1,7 @@
 package main
 
 import (
-	"os"
+	//	"os"
 	"path/filepath"
 	"strings"
 
@@ -66,9 +66,16 @@ func (r *Repository) InitSchema() {
 		r.DB.DropTable(&Image{})
 	}
 
-	r.DB.CreateTable(&Image{})
-	r.DB.CreateTable(&ImageLabel{})
-	r.DB.CreateTable(&ImageTag{})
+	var il = &ImageLabel{}
+	var it = &ImageTag{}
+	var i = &Image{}
+
+	r.DB.CreateTable(i)
+	r.DB.CreateTable(il)
+	//r.DB.Model(il).AddForeignKey("img_id", "Images(ID)", "RESTRICTED", "RESTRICTED")
+
+	r.DB.CreateTable(it)
+	//r.DB.Model(it).AddForeignKey("img_id", "Images(ID)", "RESTRICTED", "RESTRICTED")
 }
 
 func (r *Repository) CloseDB() {
@@ -83,11 +90,13 @@ func (r *Repository) BackupSchema() {
 		return
 	}
 
-	err := os.Rename(repositoryFullName(), repositoryFullName()+".bkp")
+	/*
+		err := os.Rename(repositoryFullName(), repositoryFullName()+".bkp")
 
-	if err != nil {
-		parrot.Error("Warning", err)
-	}
+		if err != nil {
+			parrot.Error("Warning", err)
+		}
+	*/
 }
 
 // functionalities
@@ -96,8 +105,8 @@ func (r *Repository) Put(img docker.APIImages) {
 	parrot.Debug("[" + asJson(img.RepoTags) + "] adding as " + TruncateID(img.ID))
 
 	var image = Image{}
-	image.ImageId = TruncateID(img.ID)
-	image.ImageLongId = img.ID
+	image.ShortId = TruncateID(img.ID)
+	image.LongId = img.ID
 
 	image.CreatedAt = img.Created
 	image.Size = bytefmt.ByteSize(uint64(img.Size))
@@ -112,7 +121,6 @@ func (r *Repository) Put(img docker.APIImages) {
 	for _, tag := range img.RepoTags {
 		var imageTag = ImageTag{}
 
-		imageTag.ImageId = image.ID
 		imageTag.Name = strings.Split(tag, ":")[0]
 		imageTag.Version = strings.Split(tag, ":")[1]
 
@@ -123,7 +131,6 @@ func (r *Repository) Put(img docker.APIImages) {
 	for k, v := range img.Labels {
 		var imageLabel = ImageLabel{}
 
-		imageLabel.ImageId = image.ID
 		imageLabel.Key = k
 		imageLabel.Value = v
 		imageLabel.Label = k + ":" + v
@@ -144,7 +151,7 @@ func (r *Repository) GetAll() []Image {
 
 func (r *Repository) Get(id string) Image {
 	var image = Image{}
-	r.DB.Where("ImageId = ?", id).First(&image)
+	r.DB.Where("short_id = ?", id).First(&image)
 
 	return image
 }
@@ -153,7 +160,9 @@ func (r *Repository) Exists(id string) bool {
 	var image = Image{}
 	var count = -1
 
-	r.DB.Where("ImageId = ?", id).First(&image).Count(&count)
+	parrot.Debug("Searching image with id", id)
+
+	r.DB.Where("short_id = ?", id).First(&image).Count(&count)
 
 	if count == 0 {
 		//parrot.Error("Error getting data", err)
