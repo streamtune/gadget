@@ -197,8 +197,6 @@ func CmdUpdate(ctx *cli.Context) {
 
 		imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
 
-		parrot.Debug("Images found: ", asJson(imgs))
-
 		var c = 0
 
 		for _, img := range imgs {
@@ -292,18 +290,18 @@ func CmdLabelsByTag(ctx *cli.Context) {
 // Volumes
 func CmdInfo(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		/*
-			var ii = ImageDetail{}
-			var iis = [][]string{}
+		var images = repository.GetAll()
 
-			for _, img := range repository.GetAll() {
-				for _, r := range AsImageDetail(img).Rows() {
-					iis = append(iis, r)
-				}
+		var header = Image{}
+		var iis = [][]string{}
+
+		for _, i := range images {
+			for _, r := range i.Rows() {
+				iis = append(iis, r)
 			}
+		}
 
-			parrot.TablePrint(ii.Header(), iis)
-		*/
+		parrot.TablePrint(header.Header(), iis)
 	})
 }
 
@@ -315,20 +313,16 @@ func CmdInfoById(ctx *cli.Context) {
 			return
 		}
 
-		parrot.Debug("ID", id)
+		var image = repository.Get(id)
 
-		/*
-			var img = repository.Get(id)
+		var header = Image{}
+		var iis = [][]string{}
 
-			var ii = ImageDetail{}
-			var iis = [][]string{}
+		for _, r := range image.Rows() {
+			iis = append(iis, r)
+		}
 
-			for _, r := range AsImageDetail(img).Rows() {
-				iis = append(iis, r)
-			}
-
-			parrot.TablePrint(ii.Header(), iis)
-		*/
+		parrot.TablePrint(header.Header(), iis)
 	})
 }
 
@@ -339,8 +333,6 @@ func CmdInfoByTag(ctx *cli.Context) {
 			parrot.Error("Error...", err)
 			return
 		}
-
-		parrot.Debug("ID", id)
 
 		var images = repository.FindByTag(id)
 
@@ -416,18 +408,18 @@ func CmdVolumesByTag(ctx *cli.Context) {
 
 func CmdList(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
-		/*
-			imgs := repository.GetAll()
-			var iis = [][]string{}
-			var ii = ImageInfo{}
-			for _, img := range imgs {
-				for _, r := range AsImageInfo(img).Rows() {
-					iis = append(iis, r)
-				}
-			}
+		var images = repository.GetAll()
 
-			parrot.TablePrint(ii.Header(), iis)
-		*/
+		var header = Image{}
+		var iis = [][]string{}
+
+		for _, i := range images {
+			for _, r := range i.Rows() {
+				iis = append(iis, r)
+			}
+		}
+
+		parrot.TablePrint(header.Header(), iis)
 	})
 }
 

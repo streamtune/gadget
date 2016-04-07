@@ -72,10 +72,7 @@ func (r *Repository) InitSchema() {
 
 	r.DB.CreateTable(i)
 	r.DB.CreateTable(il)
-	//r.DB.Model(il).AddForeignKey("img_id", "Images(ID)", "RESTRICTED", "RESTRICTED")
-
 	r.DB.CreateTable(it)
-	//r.DB.Model(it).AddForeignKey("img_id", "Images(ID)", "RESTRICTED", "RESTRICTED")
 }
 
 func (r *Repository) CloseDB() {
@@ -90,6 +87,7 @@ func (r *Repository) BackupSchema() {
 		return
 	}
 
+	// TODO solve this
 	/*
 		err := os.Rename(repositoryFullName(), repositoryFullName()+".bkp")
 
@@ -144,14 +142,16 @@ func (r *Repository) Put(img docker.APIImages) {
 
 func (r *Repository) GetAll() []Image {
 	images := []Image{}
-	r.DB.Find(&images)
+
+	r.DB.Model(&images).Preload("Tags").Preload("Labels").Find(&images)
 
 	return images
 }
 
 func (r *Repository) Get(id string) Image {
 	var image = Image{}
-	r.DB.Where("short_id = ?", id).First(&image)
+
+	r.DB.Model(&image).Where("short_id = ?", id).Preload("Tags").Preload("Labels").First(&image)
 
 	return image
 }
@@ -174,7 +174,7 @@ func (r *Repository) Exists(id string) bool {
 func (r *Repository) FindByShortId(id string) Image {
 	var image = Image{}
 
-	r.DB.Where("short_id = ?", id).First(&image)
+	r.DB.Model(&image).Where("short_id = ?", id).Preload("Tags").Preload("Labels").First(&image)
 
 	return image
 }
@@ -182,8 +182,7 @@ func (r *Repository) FindByShortId(id string) Image {
 func (r *Repository) FindByLongId(id string) Image {
 	var image = Image{}
 
-	r.DB.Where("long_id = ?", id).First(&image)
-
+	r.DB.Model(&image).Where("long_id = ?", id).Preload("Tags").Preload("Labels").First(&image)
 	return image
 }
 
@@ -199,7 +198,6 @@ func (r *Repository) FindByTag(tag string) []Image {
 	}
 
 	r.DB.Model(&images).Where("id = ?", imageTag.ImageID).Preload("Tags").Preload("Labels").Find(&images)
-	parrot.Debug(asJson(images))
 
 	return images
 }
