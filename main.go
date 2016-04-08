@@ -32,7 +32,7 @@ func readSettings() {
 		parrot = quant.NewVerboseParrot("gadget")
 	}
 
-	parrot.Debug("Parrot is set to talk a lot!")
+	parrot.Debug("Parrot will talk a lot!")
 }
 
 func main() {
