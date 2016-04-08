@@ -20,6 +20,8 @@ func serve() {
 		v1.GET("/images/:repo", GetImageByTag)
 		v1.GET("/labels", GetImagesWithLabels)
 		v1.POST("/labels", GetImagesByLabel)
+		v1.GET("/volumes", GetImagesWithVolumes)
+		v1.POST("/volumes", GetImagesByVolume)
 	}
 	r.Run(":" + strconv.Itoa(settings.RestPort()))
 
@@ -92,12 +94,12 @@ func GetImageByTag(c *gin.Context) {
 
 func GetImagesWithLabels(c *gin.Context) {
 	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/labels
-	var labels = repository.GetImagesWithLabels()
+	var images = repository.GetImagesWithLabels()
 
-	if len(labels) == 0 {
+	if len(images) == 0 {
 		c.Status(http.StatusNoContent)
 	} else {
-		c.JSON(http.StatusOK, labels)
+		c.JSON(http.StatusOK, images)
 	}
 }
 
@@ -106,6 +108,30 @@ func GetImagesByLabel(c *gin.Context) {
 	lbl := c.PostForm("lbl")
 
 	var images = repository.GetImagesByLabel(lbl)
+
+	if len(images) == 0 {
+		c.Status(http.StatusNoContent)
+	} else {
+		c.JSON(http.StatusOK, images)
+	}
+}
+
+func GetImagesWithVolumes(c *gin.Context) {
+	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/labels
+	var images = repository.GetImagesWithVolumes()
+
+	if len(images) == 0 {
+		c.Status(http.StatusNoContent)
+	} else {
+		c.JSON(http.StatusOK, images)
+	}
+}
+
+func GetImagesByVolume(c *gin.Context) {
+	// curl --data "vlm=vendor" -H "Content-Type: application/json" http://localhost:9080/api/v1/labels
+	vlm := c.PostForm("vlm")
+
+	var images = repository.GetImagesByVolume(vlm)
 
 	if len(images) == 0 {
 		c.Status(http.StatusNoContent)

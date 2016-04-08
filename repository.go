@@ -232,3 +232,19 @@ func (r *Repository) GetImagesByLabel(lbl string) []Image {
 
 	return images
 }
+
+func (r *Repository) GetImagesWithVolumes() []Image {
+	images := []Image{}
+
+	r.DB.Model(&images).Joins("inner join image_volumes on image_volumes.image_id = images.id").Preload("Volumes").Preload("Tags").Preload("Volumes").Find(&images)
+
+	return images
+}
+
+func (r *Repository) GetImagesByVolume(vlm string) []Image {
+	images := []Image{}
+
+	r.DB.Model(&images).Joins("inner join image_volumes on image_volumes.image_id = images.id").Where("volume LIKE ?", "%"+vlm+"%").Preload("Tags").Preload("Volumes").Find(&images)
+
+	return images
+}
