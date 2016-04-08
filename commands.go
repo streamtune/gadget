@@ -56,7 +56,21 @@ func (r *Commands) Update() error {
 		parrot.Debug("ID is", id)
 
 		if !repository.Exists(id) {
-			repository.Put(img)
+			// load image details
+
+			// skipping dangling images
+			if img.RepoTags[0] != "<none>:<none>" {
+
+				imgDetails, err := client.InspectImage(img.RepoTags[0])
+
+				if err != nil {
+					return err
+				}
+
+				repository.Put(img, *imgDetails)
+			} else {
+				repository.Put(img, docker.Image{})
+			}
 			c = c + 1
 			parrot.Debug("["+id+"] - ", strings.Join(img.RepoTags, ", "), "added to bucket")
 		} else {
@@ -67,4 +81,145 @@ func (r *Commands) Update() error {
 	parrot.Println("Added " + strconv.Itoa(c) + " images")
 
 	return nil
+}
+
+func (r *Commands) List() {
+
+	var images = repository.GetAll()
+
+	var header = Image{}
+	var iis = [][]string{}
+
+	for _, i := range images {
+		for _, r := range i.RowsForList() {
+			iis = append(iis, r)
+		}
+	}
+
+	parrot.TablePrint(header.HeaderForList(), iis)
+
+}
+
+func (r *Commands) Labels() {
+	var images = repository.GetAll()
+
+	var header = Image{}
+	var iis = [][]string{}
+
+	for _, i := range images {
+		for _, r := range i.RowsForLabel() {
+			iis = append(iis, r)
+		}
+	}
+
+	parrot.TablePrint(header.HeaderForLabel(), iis)
+}
+
+func (r *Commands) LabelsById(id string) {
+	var image = repository.Get(id)
+
+	var header = Image{}
+	var iis = [][]string{}
+
+	for _, r := range image.RowsForLabel() {
+		iis = append(iis, r)
+	}
+
+	parrot.TablePrint(header.HeaderForLabel(), iis)
+}
+
+func (r *Commands) LabelsByTag(id string) {
+	var image = repository.FindByTag(id)
+
+	var header = Image{}
+	var iis = [][]string{}
+
+	for _, r := range image.RowsForLabel() {
+		iis = append(iis, r)
+	}
+
+	parrot.TablePrint(header.HeaderForLabel(), iis)
+}
+
+func (r *Commands) Info() {
+
+	var images = repository.GetAll()
+
+	var header = Image{}
+	var iis = [][]string{}
+
+	for _, i := range images {
+		for _, r := range i.RowsForInfo() {
+			iis = append(iis, r)
+		}
+	}
+
+	parrot.TablePrint(header.HeaderForInfo(), iis)
+}
+
+func (r *Commands) InfoById(id string) {
+	var image = repository.Get(id)
+
+	var header = Image{}
+	var iis = [][]string{}
+
+	for _, r := range image.RowsForInfo() {
+		iis = append(iis, r)
+	}
+
+	parrot.TablePrint(header.HeaderForInfo(), iis)
+}
+
+func (r *Commands) InfoByTag(id string) {
+	var image = repository.FindByTag(id)
+
+	var header = Image{}
+	var iis = [][]string{}
+
+	for _, r := range image.RowsForInfo() {
+		iis = append(iis, r)
+	}
+
+	parrot.TablePrint(header.HeaderForInfo(), iis)
+}
+
+func (r *Commands) Volumes() {
+	var images = repository.GetAll()
+
+	var header = Image{}
+	var iis = [][]string{}
+
+	for _, i := range images {
+		for _, r := range i.RowsForVolume() {
+			iis = append(iis, r)
+		}
+	}
+
+	parrot.TablePrint(header.HeaderForVolume(), iis)
+}
+
+func (r *Commands) VolumesById(id string) {
+	var image = repository.Get(id)
+
+	var header = Image{}
+	var iis = [][]string{}
+
+	for _, r := range image.RowsForVolume() {
+		iis = append(iis, r)
+	}
+
+	parrot.TablePrint(header.HeaderForVolume(), iis)
+}
+
+func (r *Commands) VolumesByTag(id string) {
+	var image = repository.FindByTag(id)
+
+	var header = Image{}
+	var iis = [][]string{}
+
+	for _, r := range image.RowsForVolume() {
+		iis = append(iis, r)
+	}
+
+	parrot.TablePrint(header.HeaderForVolume(), iis)
 }

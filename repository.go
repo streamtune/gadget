@@ -60,6 +60,11 @@ func (r *Repository) InitSchema() {
 		r.DB.DropTable(&ImageBlob{})
 	}
 
+	if r.DB.HasTable(&ImageVolume{}) {
+		parrot.Debug("ImageVolume already exists, removing it")
+		r.DB.DropTable(&ImageVolume{})
+	}
+
 	if r.DB.HasTable(&Image{}) {
 		parrot.Debug("Image already exists, removing it")
 		r.DB.DropTable(&Image{})
@@ -69,11 +74,13 @@ func (r *Repository) InitSchema() {
 	var it = &ImageTag{}
 	var i = &Image{}
 	var ib = &ImageBlob{}
+	var iv = &ImageVolume{}
 
 	r.DB.CreateTable(i)
 	r.DB.CreateTable(il)
 	r.DB.CreateTable(it)
 	r.DB.CreateTable(ib)
+	r.DB.CreateTable(iv)
 }
 
 func (r *Repository) CloseDB() {
@@ -93,7 +100,7 @@ func (r *Repository) BackupSchema() error {
 
 // functionalities
 
-func (r *Repository) Put(img docker.APIImages) {
+func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) {
 	parrot.Debug("[" + AsJson(img.RepoTags) + "] adding as " + TruncateID(img.ID))
 
 	var image = Image{}
@@ -106,9 +113,10 @@ func (r *Repository) Put(img docker.APIImages) {
 
 	image.Labels = []ImageLabel{}
 	image.Tags = []ImageTag{}
+	image.Volumes = []ImageVolume{}
 
 	image.Blob = ImageBlob{}
-	image.Blob.Blob = AsJson(img)
+	image.Blob.Summary = AsJson(img)
 
 	// Adding tags
 	for _, tag := range img.RepoTags {
@@ -132,13 +140,25 @@ func (r *Repository) Put(img docker.APIImages) {
 		image.Labels = append(image.Labels, imageLabel)
 	}
 
+	// Add volumes
+	image.Blob.Details = AsJson(imgDetails)
+
+	for k, v := range imgDetails.ContainerConfig.Volumes {
+		var imageVolume = ImageVolume{}
+
+		imageVolume.Volume = k
+		imageVolume.Data = AsJson(v)
+
+		image.Volumes = append(image.Volumes, imageVolume)
+	}
+
 	r.DB.Create(&image)
 }
 
 func (r *Repository) GetAll() []Image {
 	images := []Image{}
 
-	r.DB.Model(&images).Preload("Tags").Preload("Labels").Find(&images)
+	r.DB.Model(&images).Preload("Blob").Preload("Volumes").Preload("Tags").Preload("Labels").Find(&images)
 
 	return images
 }
@@ -146,7 +166,7 @@ func (r *Repository) GetAll() []Image {
 func (r *Repository) Get(id string) Image {
 	var image = Image{}
 
-	r.DB.Model(&image).Where("short_id = ?", id).Preload("Tags").Preload("Labels").First(&image)
+	r.DB.Model(&image).Where("short_id = ?", id).Preload("Blob").Preload("Volumes").Preload("Tags").Preload("Labels").First(&image)
 
 	return image
 }
@@ -169,7 +189,7 @@ func (r *Repository) Exists(id string) bool {
 func (r *Repository) FindByShortId(id string) Image {
 	var image = Image{}
 
-	r.DB.Model(&image).Where("short_id = ?", id).Preload("Tags").Preload("Labels").First(&image)
+	r.DB.Model(&image).Where("short_id = ?", id).Preload("Blob").Preload("Volumes").Preload("Tags").Preload("Labels").First(&image)
 
 	return image
 }
@@ -177,7 +197,7 @@ func (r *Repository) FindByShortId(id string) Image {
 func (r *Repository) FindByLongId(id string) Image {
 	var image = Image{}
 
-	r.DB.Model(&image).Where("long_id = ?", id).Preload("Tags").Preload("Labels").First(&image)
+	r.DB.Model(&image).Where("long_id = ?", id).Preload("Blob").Preload("Volumes").Preload("Tags").Preload("Labels").First(&image)
 	return image
 }
 
@@ -192,7 +212,7 @@ func (r *Repository) FindByTag(tag string) Image {
 		return image
 	}
 
-	r.DB.Model(&image).Where("id = ?", imageTag.ImageID).Preload("Tags").Preload("Labels").Find(&image)
+	r.DB.Model(&image).Where("id = ?", imageTag.ImageID).Preload("Volumes").Preload("Tags").Preload("Labels").Find(&image)
 
 	return image
 }
@@ -200,7 +220,7 @@ func (r *Repository) FindByTag(tag string) Image {
 func (r *Repository) GetImagesWithLabels() []Image {
 	images := []Image{}
 
-	r.DB.Model(&images).Joins("inner join image_labels on image_labels.image_id = images.id").Preload("Tags").Preload("Labels").Find(&images)
+	r.DB.Model(&images).Joins("inner join image_labels on image_labels.image_id = images.id").Preload("Volumes").Preload("Tags").Preload("Labels").Find(&images)
 
 	return images
 }
