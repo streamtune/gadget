@@ -8,13 +8,21 @@ import (
 
 const shortLen = 12
 
-func asJson(o interface{}) string {
+func AsJson(o interface{}) string {
 	b, err := json.Marshal(o)
 	if err != nil {
 		parrot.Error("Warning", err)
 		return "{}"
 	}
 	return string(b)
+}
+
+func NameID(id string) string {
+	if i := strings.IndexRune(id, ':'); i >= 0 {
+		id = id[i+1:]
+	}
+	trimTo := len(id)
+	return id[:trimTo]
 }
 
 func TruncateID(id string) string {
@@ -39,7 +47,7 @@ func Truncate(str string) string {
 	return str[:trimTo] + suffix
 }
 
-func random() string {
+func Random() string {
 
 	var dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
@@ -51,23 +59,25 @@ func random() string {
 	return string(bytes)
 }
 
-func tail(a []string) []string {
+func Tail(a []string) []string {
 	if len(a) >= 2 {
 		return []string(a)[1:]
 	}
 	return []string{}
 }
 
-func check(e error) {
+func Check(msg string, e error) bool {
 	if e != nil {
-		parrot.Error("Error...", e)
-		return
+		parrot.Error(msg, e)
+		return false
 	}
+
+	return true
 }
 
-func fatal(e error) {
+func Fatal(msg string, e error) {
 	if e != nil {
-		parrot.Error("Fatal...", e)
+		parrot.Error(msg, e)
 		panic(e)
 	}
 }

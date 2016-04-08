@@ -14,11 +14,12 @@ func serve() {
 	r.Use(Cors())
 	v1 := r.Group("api/v1")
 	{
+		v1.HEAD("/revive", HeadRevive)
 		v1.GET("/images", GetImages)
-		v1.GET("/images/:repo/:tag", GetLabelByRepoTag)
-		v1.GET("/images/:repo", GetLabelByTag)
-		v1.GET("/labelsIndexes", GetLabelsIndexes)
-		v1.POST("/labelsIndexes", GetImagesByLabel)
+		v1.GET("/images/:repo/:tag", GetImageByRepoTag)
+		v1.GET("/images/:repo", GetImageByTag)
+		v1.GET("/labels", GetImagesWithLabels)
+		v1.POST("/labels", GetImagesByLabel)
 	}
 	r.Run(":" + strconv.Itoa(settings.RestPort()))
 
@@ -28,6 +29,16 @@ func Cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Add("Access-Control-Allow-Origin", "*")
 		c.Next()
+	}
+}
+
+func HeadRevive(c *gin.Context) {
+	err := commands.Revive()
+
+	if err != nil {
+		c.Status(http.StatusOK)
+	} else {
+		c.Status(http.StatusNotAcceptable)
 	}
 }
 
@@ -46,73 +57,59 @@ func GetImages(c *gin.Context) {
 	}
 }
 
-func GetLabelByRepoTag(c *gin.Context) {
+func GetImageByRepoTag(c *gin.Context) {
 	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/images/
-	/*
-		tag := c.Param("tag")
-		repo := c.Param("repo")
 
-		var img = repository.FindByTag(repo + "/" + tag)
+	tag := c.Param("tag")
+	repo := c.Param("repo")
 
-		parrot.Debug("[" + tag + "] - " + asJson(img.Labels) + " [" + strconv.Itoa(len(img.Labels)) + "]")
+	var img = repository.FindByTag(repo + "/" + tag)
 
-		if len(img.Labels) == 0 {
-			c.Status(http.StatusNoContent)
-		} else {
-			c.JSON(http.StatusOK, img.Labels)
-		}
-	*/
+	parrot.Debug("[" + tag + "] - " + AsJson(img.Labels) + " [" + strconv.Itoa(len(img.Labels)) + "]")
+
+	if len(img.Labels) == 0 {
+		c.Status(http.StatusNoContent)
+	} else {
+		c.JSON(http.StatusOK, img.Labels)
+	}
+
 }
 
-func GetLabelByTag(c *gin.Context) {
+func GetImageByTag(c *gin.Context) {
 	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/images/
-	/*
-		repo := c.Param("repo")
+	repo := c.Param("repo")
 
-		var img = repository.FindByTag(repo)
+	var img = repository.FindByTag(repo)
 
-		parrot.Debug("[" + repo + "] - " + asJson(img.Labels) + " [" + strconv.Itoa(len(img.Labels)) + "]")
+	parrot.Debug("[" + repo + "] - " + AsJson(img.Labels) + " [" + strconv.Itoa(len(img.Labels)) + "]")
 
-		if len(img.Labels) == 0 {
-			c.Status(http.StatusNoContent)
-		} else {
-			c.JSON(http.StatusOK, img.Labels)
-		}
-	*/
+	if len(img.Labels) == 0 {
+		c.Status(http.StatusNoContent)
+	} else {
+		c.JSON(http.StatusOK, img.Labels)
+	}
 }
 
-func GetLabelsIndexes(c *gin.Context) {
-	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/labelsIndexes
-	/*
-		var labelsIndexes = repository.GetLabelsIndexes()
+func GetImagesWithLabels(c *gin.Context) {
+	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/labels
+	var labels = repository.GetImagesWithLabels()
 
-		for _, lbl := range labelsIndexes {
-			parrot.Debug("[" + lbl.Label + "] - " + strings.Join(lbl.Ids, ", "))
-		}
-
-		if len(labelsIndexes) == 0 {
-			c.Status(http.StatusNoContent)
-		} else {
-			c.JSON(http.StatusOK, labelsIndexes)
-		}
-	*/
+	if len(labels) == 0 {
+		c.Status(http.StatusNoContent)
+	} else {
+		c.JSON(http.StatusOK, labels)
+	}
 }
 
 func GetImagesByLabel(c *gin.Context) {
-	// curl --data "lbl=vendor" -H "Content-Type: application/json" http://localhost:9080/api/v1/labelsIndexes
-	/*
-		lbl := c.PostForm("lbl")
+	// curl --data "lbl=vendor" -H "Content-Type: application/json" http://localhost:9080/api/v1/labels
+	lbl := c.PostForm("lbl")
 
-		var images = repository.GetImagesByLabel(lbl)
+	var images = repository.GetImagesByLabel(lbl)
 
-		for _, img := range images {
-			parrot.Debug("[" + img.ID + "] - " + strings.Join(img.RepoTags, ", ") + " [" + strconv.Itoa(len(img.Labels)) + "]")
-		}
-
-		if len(images) == 0 {
-			c.Status(http.StatusNoContent)
-		} else {
-			c.JSON(http.StatusOK, images)
-		}
-	*/
+	if len(images) == 0 {
+		c.Status(http.StatusNoContent)
+	} else {
+		c.JSON(http.StatusOK, images)
+	}
 }

@@ -50,7 +50,7 @@ func (sts *Settings) LoadSettings() {
 		json.Unmarshal(file, &sts.configs)
 
 		parrot.Debug("folder: " + folder)
-		parrot.Debug("file: " + asJson(sts.configs))
+		parrot.Debug("file: " + AsJson(sts.configs))
 
 	}
 }

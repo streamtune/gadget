@@ -1,25 +1,19 @@
 package main
 
 import (
-	//	"os"
+	"errors"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/fsouza/go-dockerclient"
 
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
-
 	"github.com/pivotal-golang/bytefmt"
 )
-
-/*
-const CREATE_IMAGES_TABLE_STMT string = "CREATE TABLE Images (	ID TEXT NOT NULL, Size TEXT, VirtualSize TEXT, Created TEXT, ParentID TEXT, PRIMARY KEY(ID));"
-const CREATE_LABELS_TABLE_STMT string = "CREATE TABLE Labels (ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Key TEXT, Value TEXT, ImgID TEXT NOT NULL, FOREIGN KEY(ImgID) REFERENCES Images(ID))"
-const CREATE_TAGS_TABLE_STMT string = "CREATE TABLE Labels (ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Key TEXT, Value TEXT, ImgID TEXT NOT NULL, FOREIGN KEY(ImgID) REFERENCES Images(ID))"
-*/
 
 type Repository struct {
 	DB *gorm.DB
@@ -61,6 +55,11 @@ func (r *Repository) InitSchema() {
 		r.DB.DropTable(&ImageLabel{})
 	}
 
+	if r.DB.HasTable(&ImageBlob{}) {
+		parrot.Debug("ImageBlob already exists, removing it")
+		r.DB.DropTable(&ImageBlob{})
+	}
+
 	if r.DB.HasTable(&Image{}) {
 		parrot.Debug("Image already exists, removing it")
 		r.DB.DropTable(&Image{})
@@ -69,10 +68,12 @@ func (r *Repository) InitSchema() {
 	var il = &ImageLabel{}
 	var it = &ImageTag{}
 	var i = &Image{}
+	var ib = &ImageBlob{}
 
 	r.DB.CreateTable(i)
 	r.DB.CreateTable(il)
 	r.DB.CreateTable(it)
+	r.DB.CreateTable(ib)
 }
 
 func (r *Repository) CloseDB() {
@@ -81,39 +82,33 @@ func (r *Repository) CloseDB() {
 	}
 }
 
-func (r *Repository) BackupSchema() {
+func (r *Repository) BackupSchema() error {
 	b, _ := pathUtils.ExistsPath(settings.RepositoryDirectory())
 	if !b {
-		return
+		return errors.New("Gadget repository path does not exist")
 	}
 
-	// TODO solve this
-	/*
-		err := os.Rename(repositoryFullName(), repositoryFullName()+".bkp")
-
-		if err != nil {
-			parrot.Error("Warning", err)
-		}
-	*/
+	return pathUtils.CopyFile(repositoryFullName(), repositoryFullName()+".bkp")
 }
 
 // functionalities
 
 func (r *Repository) Put(img docker.APIImages) {
-	parrot.Debug("[" + asJson(img.RepoTags) + "] adding as " + TruncateID(img.ID))
+	parrot.Debug("[" + AsJson(img.RepoTags) + "] adding as " + TruncateID(img.ID))
 
 	var image = Image{}
 	image.ShortId = TruncateID(img.ID)
 	image.LongId = img.ID
 
-	image.CreatedAt = img.Created
+	image.CreatedAt = time.Unix(0, img.Created).Format("2006-01-02 15:04:05")
 	image.Size = bytefmt.ByteSize(uint64(img.Size))
 	image.VirtualSize = bytefmt.ByteSize(uint64(img.VirtualSize))
 
 	image.Labels = []ImageLabel{}
 	image.Tags = []ImageTag{}
 
-	image.Blob = asJson(img)
+	image.Blob = ImageBlob{}
+	image.Blob.Blob = AsJson(img)
 
 	// Adding tags
 	for _, tag := range img.RepoTags {
@@ -186,83 +181,37 @@ func (r *Repository) FindByLongId(id string) Image {
 	return image
 }
 
-func (r *Repository) FindByTag(tag string) []Image {
-	var images = []Image{}
+func (r *Repository) FindByTag(tag string) Image {
+	var image = Image{}
 	var imageTag = ImageTag{}
 
 	r.DB.Where("tag = ?", tag).First(&imageTag)
 
 	if &imageTag == nil {
 		parrot.Debug("No tag found")
-		return nil
+		return image
 	}
 
-	r.DB.Model(&images).Where("id = ?", imageTag.ImageID).Preload("Tags").Preload("Labels").Find(&images)
+	r.DB.Model(&image).Where("id = ?", imageTag.ImageID).Preload("Tags").Preload("Labels").Find(&image)
+
+	return image
+}
+
+func (r *Repository) GetImagesWithLabels() []Image {
+	images := []Image{}
+
+	r.DB.Model(&images).Joins("inner join image_labels on image_labels.image_id = images.id").Preload("Tags").Preload("Labels").Find(&images)
 
 	return images
 }
 
-/*
-func (r *Repository) GetLabelsIndexes() []LabelIndex {
-	labels := []LabelIndex{}
+func (r *Repository) GetImagesByLabel(lbl string) []Image {
+	images := []Image{}
 
-	r.DB.View(func(tx *bolt.Tx) error {
-		cc := tx.Bucket([]byte("LabelsIndex"))
-		c := cc.Cursor()
-
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			var label = LabelIndex{}
-			err := json.Unmarshal(v, &label)
-			if err != nil {
-				return err
-			}
-
-			labels = append(labels, label)
-		}
-
-		return nil
-	})
-
-	return labels
-}
-
-func (r *Repository) GetImagesByLabel(lbl string) []docker.APIImages {
-	images := []docker.APIImages{}
-
-	r.DB.View(func(tx *bolt.Tx) error {
-		cc := tx.Bucket([]byte("LabelsIndex"))
-		c := cc.Cursor()
-
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			var label = LabelIndex{}
-			err := json.Unmarshal(v, &label)
-
-			if err != nil {
-				return err
-			}
-
-			if strings.Contains(label.Label, lbl) {
-				for _, id := range label.Ids {
-					var image = docker.APIImages{}
-					cc := tx.Bucket([]byte("Images"))
-					img := cc.Get([]byte(id))
-
-					err := json.Unmarshal(img, &image)
-
-					if err != nil {
-						return err
-					}
-					images = append(images, image)
-				}
-			}
-		}
-
-		return nil
-	})
+	r.DB.Model(&images).Joins("inner join image_labels on image_labels.image_id = images.id").Where("label LIKE ?", "%"+lbl+"%").Preload("Tags").Preload("Labels").Find(&images)
 
 	return images
 }
-*/
 
 /*
 func (r *Repository) FindById(id string) Command {
