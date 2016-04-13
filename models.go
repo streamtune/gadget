@@ -6,15 +6,10 @@ import (
 )
 
 // Images
-type Model struct {
-	ID uint64 `json:id sql:"AUTO_INCREMENT" gorm:"primary_key"`
-}
-
 type Image struct {
-	Model
+	ID          string        `json:shortId storm:"id"`
 	CreatedAt   string        `json:createdAt`
-	ShortId     string        `json:shortId sql:"unique;index" gorm:"not null,unique"`
-	LongId      string        `json:longId sql:"unique;index gorm:"not null,unique""`
+	LongId      string        `json:longId storm:"index"`
 	Labels      []ImageLabel  `json:labels`
 	Size        string        `json:size`
 	VirtualSize string        `json:virtualSize`
@@ -24,32 +19,30 @@ type Image struct {
 }
 
 type ImageBlob struct {
-	ImageID uint64 `gorm:index`
+	ID      string `json:shortId storm:"id"`
 	Summary string `json:summary`
 	Details string `json:details`
 }
 
 type ImageTag struct {
-	Model
-	ImageID uint64 `gorm:index`
-	Name    string `json:name gorm:"not null"`
-	Version string `json:version`
-	Tag     string `json:tag gorm:"not null"`
+	ID       string   `json:tag storm:"id"`
+	ImageIDs []string `json:images`
+	Name     string   `json:name`
+	Version  string   `json:version`
 }
 
 type ImageVolume struct {
-	Model
-	ImageID uint64 `gorm:index`
-	Volume  string `json:volume`
-	Data    string `json:data gorm:"not null"`
+	ID       string   `json:volumedata storm:"id"`
+	ImageIDs []string `json:images`
+	Volume   string   `json:volume storm:"index"`
+	Data     string   `json:data`
 }
 
 type ImageLabel struct {
-	Model
-	ImageID uint64 `gorm:index`
-	Key     string `json:key`
-	Value   string `json:value`
-	Label   string `json:label`
+	ID       string   `json:label storm:"id"`
+	ImageIDs []string `json:images`
+	Key      string   `json:key`
+	Value    string   `json:value`
 }
 
 // Output results....
@@ -63,7 +56,7 @@ func (r *Image) RowsForList() [][]string {
 
 	for _, t := range r.Tags {
 		//time.Unix(0, r.CreatedAt).Format("2006-01-02 15:04:05")
-		rs = append(rs, []string{r.ShortId, t.Name, Truncate(t.Version),
+		rs = append(rs, []string{r.ID, t.Name, Truncate(t.Version),
 			r.Size, r.VirtualSize,
 			strconv.Itoa(len(r.Tags)),
 			strconv.Itoa(len(r.Labels)),
@@ -82,7 +75,7 @@ func (r *Image) RowsForInfo() [][]string {
 
 	for _, t := range r.Tags {
 		//time.Unix(0, r.CreatedAt).Format("2006-01-02 15:04:05")
-		rs = append(rs, []string{r.ShortId, t.Tag, NameID(r.LongId), r.Size, r.VirtualSize})
+		rs = append(rs, []string{r.ID, t.ID, NameID(r.LongId), r.Size, r.VirtualSize})
 	}
 
 	return rs
@@ -97,12 +90,12 @@ func (r *Image) RowsForLabel() [][]string {
 	var tags = []string{}
 
 	for _, t := range r.Tags {
-		tags = append(tags, t.Tag)
+		tags = append(tags, t.ID)
 	}
 
 	for _, t := range r.Labels {
 		//time.Unix(0, r.CreatedAt).Format("2006-01-02 15:04:05")
-		rs = append(rs, []string{r.ShortId, t.Label, strings.Join(tags, ",")})
+		rs = append(rs, []string{r.ID, t.ID, strings.Join(tags, ",")})
 	}
 
 	return rs
@@ -117,12 +110,12 @@ func (r *Image) RowsForVolume() [][]string {
 	var tags = []string{}
 
 	for _, t := range r.Tags {
-		tags = append(tags, t.Tag)
+		tags = append(tags, t.ID)
 	}
 
 	for _, t := range r.Volumes {
 		//time.Unix(0, r.CreatedAt).Format("2006-01-02 15:04:05")
-		rs = append(rs, []string{r.ShortId, t.Volume, t.Data, strings.Join(tags, ",")})
+		rs = append(rs, []string{r.ID, t.Volume, t.Data, strings.Join(tags, ",")})
 	}
 
 	return rs

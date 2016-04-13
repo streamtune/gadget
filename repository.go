@@ -2,21 +2,19 @@ package main
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
 
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	_ "github.com/mattn/go-sqlite3"
-
-	"github.com/jinzhu/gorm"
+	"github.com/asdine/storm"
 	"github.com/pivotal-golang/bytefmt"
 )
 
 type Repository struct {
-	DB *gorm.DB
+	DB *storm.DB
 }
 
 // HELPER FUNCTIONS
@@ -37,56 +35,42 @@ func (r *Repository) InitDB() {
 		pathUtils.CreatePath(settings.RepositoryDirectory())
 	}
 
-	r.DB, err = gorm.Open("sqlite3", repositoryFullName())
+	r.DB, err = storm.Open(repositoryFullName(), storm.AutoIncrement())
+	parrot.Debug("Opened database", repositoryFullName())
+
 	if err != nil {
 		parrot.Error("Got error creating repository directory", err)
 	}
 }
 
 func (r *Repository) InitSchema() {
+	err := r.DB.Init(&Image{})
 
-	if r.DB.HasTable(&ImageTag{}) {
-		parrot.Debug("ImageTag already exists, removing it")
-		r.DB.DropTable(&ImageTag{})
+	if err != nil {
+		parrot.Warn("Error initializing Image", err)
 	}
 
-	if r.DB.HasTable(&ImageLabel{}) {
-		parrot.Debug("ImageLabel already exists, removing it")
-		r.DB.DropTable(&ImageLabel{})
+	err = r.DB.Init(&ImageTag{})
+
+	if err != nil {
+		parrot.Warn("Error initializing ImageTag", err)
 	}
 
-	if r.DB.HasTable(&ImageBlob{}) {
-		parrot.Debug("ImageBlob already exists, removing it")
-		r.DB.DropTable(&ImageBlob{})
+	err = r.DB.Init(&ImageVolume{})
+
+	if err != nil {
+		parrot.Warn("Error initializing ImageVolume", err)
 	}
 
-	if r.DB.HasTable(&ImageVolume{}) {
-		parrot.Debug("ImageVolume already exists, removing it")
-		r.DB.DropTable(&ImageVolume{})
+	err = r.DB.Init(&ImageLabel{})
+
+	if err != nil {
+		parrot.Warn("Error initializing ImageLabel", err)
 	}
-
-	if r.DB.HasTable(&Image{}) {
-		parrot.Debug("Image already exists, removing it")
-		r.DB.DropTable(&Image{})
-	}
-
-	var il = &ImageLabel{}
-	var it = &ImageTag{}
-	var i = &Image{}
-	var ib = &ImageBlob{}
-	var iv = &ImageVolume{}
-
-	r.DB.CreateTable(i)
-	r.DB.CreateTable(il)
-	r.DB.CreateTable(it)
-	r.DB.CreateTable(ib)
-	r.DB.CreateTable(iv)
 }
 
 func (r *Repository) CloseDB() {
-	if err := r.DB.Close(); err != nil {
-		parrot.Error("Error", err)
-	}
+	r.DB.Close()
 }
 
 func (r *Repository) BackupSchema() error {
@@ -95,21 +79,39 @@ func (r *Repository) BackupSchema() error {
 		return errors.New("Gadget repository path does not exist")
 	}
 
-	return pathUtils.CopyFile(repositoryFullName(), repositoryFullName()+".bkp")
+	err := os.Rename(repositoryFullName(), repositoryFullName()+".bkp")
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(repositoryFullName()); err == nil {
+		return os.Remove(repositoryFullName())
+	}
+
+	return nil
+
 }
 
 // functionalities
 
-func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) {
+func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) error {
 	parrot.Debug("[" + AsJson(img.RepoTags) + "] adding as " + TruncateID(img.ID))
 
 	var image = Image{}
-	image.ShortId = TruncateID(img.ID)
+	image.ID = TruncateID(img.ID)
 	image.LongId = img.ID
 
 	image.CreatedAt = time.Unix(0, img.Created).Format("2006-01-02 15:04:05")
 	image.Size = bytefmt.ByteSize(uint64(img.Size))
 	image.VirtualSize = bytefmt.ByteSize(uint64(img.VirtualSize))
+
+	err := r.DB.Save(&image)
+	parrot.Info("--> added image", image.ID)
+
+	if err != nil {
+		return err
+	}
 
 	image.Labels = []ImageLabel{}
 	image.Tags = []ImageTag{}
@@ -117,14 +119,36 @@ func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) {
 
 	image.Blob = ImageBlob{}
 	image.Blob.Summary = AsJson(img)
+	image.Blob.ID = image.ID
+
+	err = r.DB.Save(&image.Blob)
+	parrot.Info("--> added imageBlob", image.Blob.ID)
+
+	if err != nil {
+		return err
+	}
 
 	// Adding tags
 	for _, tag := range img.RepoTags {
 		var imageTag = ImageTag{}
 
-		imageTag.Name = strings.Split(tag, ":")[0]
-		imageTag.Version = strings.Split(tag, ":")[1]
-		imageTag.Tag = tag
+		err := r.DB.One("ID", tag, &imageTag)
+
+		if err == nil {
+			imageTag.ImageIDs = append(imageTag.ImageIDs, image.ID)
+		} else {
+			imageTag.ID = tag
+			imageTag.ImageIDs = append(imageTag.ImageIDs, image.ID)
+			imageTag.Name = strings.Split(tag, ":")[0]
+			imageTag.Version = strings.Split(tag, ":")[1]
+		}
+
+		err = r.DB.Save(&imageTag)
+		parrot.Info("--> added imageTag", imageTag.ID, image.ID)
+
+		if err != nil {
+			return err
+		}
 
 		image.Tags = append(image.Tags, imageTag)
 	}
@@ -133,9 +157,22 @@ func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) {
 	for k, v := range img.Labels {
 		var imageLabel = ImageLabel{}
 
-		imageLabel.Key = k
-		imageLabel.Value = v
-		imageLabel.Label = k + ":" + v
+		err := r.DB.One("ID", k+":"+v, &imageLabel)
+
+		if err == nil {
+			imageLabel.ImageIDs = append(imageLabel.ImageIDs, image.ID)
+		} else {
+			imageLabel.ImageIDs = append(imageLabel.ImageIDs, image.ID)
+			imageLabel.Key = k
+			imageLabel.Value = v
+			imageLabel.ID = k + ":" + v
+		}
+
+		err = r.DB.Save(&imageLabel)
+		parrot.Info("--> added imageLabel", imageLabel.ID, image.ID)
+		if err != nil {
+			return err
+		}
 
 		image.Labels = append(image.Labels, imageLabel)
 	}
@@ -146,105 +183,218 @@ func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) {
 	for k, v := range imgDetails.ContainerConfig.Volumes {
 		var imageVolume = ImageVolume{}
 
-		imageVolume.Volume = k
-		imageVolume.Data = AsJson(v)
+		err := r.DB.One("ID", k+":"+imageVolume.Data, &imageVolume)
+		if err == nil {
+			imageVolume.ImageIDs = append(imageVolume.ImageIDs, image.ID)
+		} else {
+			imageVolume.ImageIDs = append(imageVolume.ImageIDs, image.ID)
+			imageVolume.Volume = k
+			imageVolume.Data = AsJson(v)
+			imageVolume.ID = k + ":" + imageVolume.Data
+		}
+
+		err = r.DB.Save(&imageVolume)
+		parrot.Info("--> added imageVolume", imageVolume.ID, image.ID)
+
+		if err != nil {
+			return err
+		}
 
 		image.Volumes = append(image.Volumes, imageVolume)
 	}
 
-	r.DB.Create(&image)
+	err = r.DB.Save(&image)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (r *Repository) GetAll() []Image {
+func (r *Repository) GetAll() ([]Image, error) {
 	images := []Image{}
+	err := r.DB.All(&images)
 
-	r.DB.Model(&images).Preload("Blob").Preload("Volumes").Preload("Tags").Preload("Labels").Find(&images)
+	if err != nil {
+		return nil, err
+	}
 
-	return images
+	return images, err
 }
 
-func (r *Repository) Get(id string) Image {
+func (r *Repository) Get(id string) (Image, error) {
 	var image = Image{}
 
-	r.DB.Model(&image).Where("short_id = ?", id).Preload("Blob").Preload("Volumes").Preload("Tags").Preload("Labels").First(&image)
+	err := r.DB.One("ID", id, &image)
 
-	return image
+	if err != nil {
+		return image, err
+	}
+
+	return image, err
 }
 
 func (r *Repository) Exists(id string) bool {
 	var image = Image{}
-	var count = -1
 
-	r.DB.Where("short_id = ?", id).First(&image).Count(&count)
+	err := r.DB.One("ID", id, &image)
 
-	if count == 0 {
-		//parrot.Error("Error getting data", err)
+	if err != nil {
 		return false
 	}
-	parrot.Debug("Searching image with id", id, " - ", count)
+
+	if &image == nil {
+		return false
+	}
 
 	return true
 }
 
-func (r *Repository) FindByShortId(id string) Image {
-	var image = Image{}
-
-	r.DB.Model(&image).Where("short_id = ?", id).Preload("Blob").Preload("Volumes").Preload("Tags").Preload("Labels").First(&image)
-
-	return image
+func (r *Repository) FindByShortId(id string) (Image, error) {
+	return r.Get(id)
 }
 
-func (r *Repository) FindByLongId(id string) Image {
+func (r *Repository) FindByLongId(id string) (Image, error) {
 	var image = Image{}
 
-	r.DB.Model(&image).Where("long_id = ?", id).Preload("Blob").Preload("Volumes").Preload("Tags").Preload("Labels").First(&image)
-	return image
+	err := r.DB.One("LongId", id, &image)
+
+	if err != nil {
+		return image, err
+	}
+
+	return image, err
 }
 
-func (r *Repository) FindByTag(tag string) Image {
-	var image = Image{}
+func (r *Repository) FindByTag(tag string) ([]Image, error) {
+	var images = []Image{}
 	var imageTag = ImageTag{}
 
-	r.DB.Where("tag = ?", tag).First(&imageTag)
+	err := r.DB.One("ID", tag, &imageTag)
+
+	parrot.Debug("Tag:", tag, "ImageTag:", imageTag)
+
+	if err != nil {
+		return nil, err
+	}
 
 	if &imageTag == nil {
 		parrot.Debug("No tag found")
-		return image
+		return nil, err
 	}
 
-	r.DB.Model(&image).Where("id = ?", imageTag.ImageID).Preload("Volumes").Preload("Tags").Preload("Labels").Find(&image)
+	for _, id := range imageTag.ImageIDs {
+		var image = Image{}
 
-	return image
+		err = r.DB.One("ID", id, &image)
+
+		parrot.Debug("Found Image", AsJson(image))
+		if err != nil {
+			return nil, err
+		}
+
+		images = append(images, image)
+	}
+
+	return images, nil
 }
 
-func (r *Repository) GetImagesWithLabels() []Image {
+func (r *Repository) GetImagesWithLabels() ([]Image, error) {
 	images := []Image{}
+	imgs := []Image{}
 
-	r.DB.Model(&images).Joins("inner join image_labels on image_labels.image_id = images.id").Preload("Volumes").Preload("Tags").Preload("Labels").Find(&images)
+	err := r.DB.All(&images)
 
-	return images
+	if err != nil {
+		return nil, err
+	}
+
+	for _, img := range images {
+		if len(img.Labels) > 0 {
+			imgs = append(imgs, img)
+		}
+	}
+
+	return imgs, err
 }
 
-func (r *Repository) GetImagesByLabel(lbl string) []Image {
-	images := []Image{}
+func (r *Repository) FindByLabel(lbl string) ([]Image, error) {
+	var images = []Image{}
+	var imagesLabels = []ImageLabel{}
 
-	r.DB.Model(&images).Joins("inner join image_labels on image_labels.image_id = images.id").Where("label LIKE ?", "%"+lbl+"%").Preload("Tags").Preload("Labels").Find(&images)
+	err := r.DB.All(&imagesLabels)
 
-	return images
+	if err != nil {
+		return nil, err
+	}
+
+	for _, il := range imagesLabels {
+		if strings.ContainsAny(il.ID, lbl) {
+			for _, id := range il.ImageIDs {
+				var image = Image{}
+
+				err = r.DB.One("ID", id, &image)
+
+				parrot.Debug("Found Image", AsJson(image))
+				if err != nil {
+					return nil, err
+				}
+
+				images = append(images, image)
+			}
+		}
+	}
+
+	return images, nil
 }
 
-func (r *Repository) GetImagesWithVolumes() []Image {
+func (r *Repository) GetImagesWithVolumes() ([]Image, error) {
 	images := []Image{}
+	imgs := []Image{}
 
-	r.DB.Model(&images).Joins("inner join image_volumes on image_volumes.image_id = images.id").Preload("Volumes").Preload("Tags").Preload("Volumes").Find(&images)
+	err := r.DB.All(&images)
 
-	return images
+	if err != nil {
+		return nil, err
+	}
+
+	for _, img := range images {
+		if len(img.Volumes) > 0 {
+			imgs = append(imgs, img)
+		}
+	}
+
+	return imgs, err
 }
 
-func (r *Repository) GetImagesByVolume(vlm string) []Image {
-	images := []Image{}
+func (r *Repository) FindByVolume(vlm string) ([]Image, error) {
+	var images = []Image{}
+	var imagesVolumes = []ImageVolume{}
 
-	r.DB.Model(&images).Joins("inner join image_volumes on image_volumes.image_id = images.id").Where("volume LIKE ?", "%"+vlm+"%").Preload("Tags").Preload("Volumes").Find(&images)
+	err := r.DB.All(&imagesVolumes)
 
-	return images
+	if err != nil {
+		return nil, err
+	}
+
+	for _, il := range imagesVolumes {
+		if strings.ContainsAny(il.ID, vlm) {
+			for _, id := range il.ImageIDs {
+				var image = Image{}
+
+				err = r.DB.One("ID", id, &image)
+
+				parrot.Debug("Found Image", AsJson(image))
+				if err != nil {
+					return nil, err
+				}
+
+				images = append(images, image)
+			}
+		}
+	}
+
+	return images, nil
+
 }

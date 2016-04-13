@@ -85,7 +85,12 @@ func (r *Commands) Update() error {
 
 func (r *Commands) List() {
 
-	var images = repository.GetAll()
+	images, err := repository.GetAll()
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
 
 	var header = Image{}
 	var iis = [][]string{}
@@ -101,7 +106,12 @@ func (r *Commands) List() {
 }
 
 func (r *Commands) Labels() {
-	var images = repository.GetAll()
+	images, err := repository.GetAll()
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
 
 	var header = Image{}
 	var iis = [][]string{}
@@ -116,7 +126,12 @@ func (r *Commands) Labels() {
 }
 
 func (r *Commands) LabelsById(id string) {
-	var image = repository.Get(id)
+	image, err := repository.Get(id)
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
 
 	var header = Image{}
 	var iis = [][]string{}
@@ -129,13 +144,20 @@ func (r *Commands) LabelsById(id string) {
 }
 
 func (r *Commands) LabelsByTag(id string) {
-	var image = repository.FindByTag(id)
+	images, err := repository.FindByTag(id)
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
 
 	var header = Image{}
 	var iis = [][]string{}
 
-	for _, r := range image.RowsForLabel() {
-		iis = append(iis, r)
+	for _, i := range images {
+		for _, r := range i.RowsForLabel() {
+			iis = append(iis, r)
+		}
 	}
 
 	parrot.TablePrint(header.HeaderForLabel(), iis)
@@ -143,7 +165,12 @@ func (r *Commands) LabelsByTag(id string) {
 
 func (r *Commands) Info() {
 
-	var images = repository.GetAll()
+	images, err := repository.GetAll()
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
 
 	var header = Image{}
 	var iis = [][]string{}
@@ -158,7 +185,12 @@ func (r *Commands) Info() {
 }
 
 func (r *Commands) InfoById(id string) {
-	var image = repository.Get(id)
+	image, err := repository.Get(id)
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
 
 	var header = Image{}
 	var iis = [][]string{}
@@ -171,20 +203,32 @@ func (r *Commands) InfoById(id string) {
 }
 
 func (r *Commands) InfoByTag(id string) {
-	var image = repository.FindByTag(id)
+	images, err := repository.FindByTag(id)
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
 
 	var header = Image{}
 	var iis = [][]string{}
 
-	for _, r := range image.RowsForInfo() {
-		iis = append(iis, r)
+	for _, i := range images {
+		for _, r := range i.RowsForInfo() {
+			iis = append(iis, r)
+		}
 	}
 
 	parrot.TablePrint(header.HeaderForInfo(), iis)
 }
 
 func (r *Commands) Volumes() {
-	var images = repository.GetAll()
+	images, err := repository.GetAll()
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
 
 	var header = Image{}
 	var iis = [][]string{}
@@ -199,7 +243,12 @@ func (r *Commands) Volumes() {
 }
 
 func (r *Commands) VolumesById(id string) {
-	var image = repository.Get(id)
+	image, err := repository.Get(id)
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
 
 	var header = Image{}
 	var iis = [][]string{}
@@ -212,14 +261,20 @@ func (r *Commands) VolumesById(id string) {
 }
 
 func (r *Commands) VolumesByTag(id string) {
-	var image = repository.FindByTag(id)
+	images, err := repository.FindByTag(id)
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
 
 	var header = Image{}
 	var iis = [][]string{}
 
-	for _, r := range image.RowsForVolume() {
-		iis = append(iis, r)
+	for _, i := range images {
+		for _, r := range i.RowsForVolume() {
+			iis = append(iis, r)
+		}
 	}
-
 	parrot.TablePrint(header.HeaderForVolume(), iis)
 }
