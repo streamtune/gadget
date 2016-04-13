@@ -77,18 +77,10 @@ func GetImageByRepoTag(c *gin.Context) {
 		return
 	}
 
-	var imagesLabels = []ImageLabel{}
-
-	for _, img := range images {
-		parrot.Debug("[" + tag + "] - " + AsJson(img.Labels) + " [" + strconv.Itoa(len(img.Labels)) + "]")
-
-		imagesLabels = append(imagesLabels, img.Labels...)
-	}
-
-	if len(imagesLabels) == 0 {
+	if len(images) == 0 {
 		c.Status(http.StatusNoContent)
 	} else {
-		c.JSON(http.StatusOK, imagesLabels)
+		c.JSON(http.StatusOK, images)
 	}
 
 }
@@ -104,81 +96,83 @@ func GetImageByTag(c *gin.Context) {
 		return
 	}
 
-	var imagesLabels = []ImageLabel{}
-
-	for _, img := range images {
-		parrot.Debug("[" + repo + "] - " + AsJson(img.Labels) + " [" + strconv.Itoa(len(img.Labels)) + "]")
-
-		imagesLabels = append(imagesLabels, img.Labels...)
-	}
-
-	if len(imagesLabels) == 0 {
+	if len(images) == 0 {
 		c.Status(http.StatusNoContent)
 	} else {
-		c.JSON(http.StatusOK, imagesLabels)
+		c.JSON(http.StatusOK, images)
 	}
 }
 
 func GetImagesWithLabels(c *gin.Context) {
 	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/labels
-	/*
-		var images = repository.GetImagesWithLabels()
+	images, err := repository.GetImagesWithLabels()
 
-		if len(images) == 0 {
-			c.Status(http.StatusNoContent)
-		} else {
-			c.JSON(http.StatusOK, images)
-		}
-	*/
+	if err != nil {
+		c.Status(http.StatusNotAcceptable)
+		return
+	}
+
+	if len(images) == 0 {
+		c.Status(http.StatusNoContent)
+	} else {
+		c.JSON(http.StatusOK, images)
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func GetImagesWithVolumes(c *gin.Context) {
+	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/volumes
+	images, err := repository.GetImagesWithVolumes()
+
+	if err != nil {
+		c.Status(http.StatusNotAcceptable)
+		return
+	}
+
+	if len(images) == 0 {
+		c.Status(http.StatusNoContent)
+	} else {
+		c.JSON(http.StatusOK, images)
+	}
 
 	c.Status(http.StatusNoContent)
 }
 
 func GetImagesByLabel(c *gin.Context) {
 	// curl --data "lbl=vendor" -H "Content-Type: application/json" http://localhost:9080/api/v1/labels
-	/*
-		lbl := c.PostForm("lbl")
+	lbl := c.PostForm("lbl")
 
-		var images = repository.GetImagesByLabel(lbl)
+	images, err := repository.FindByLabel(lbl)
 
-		if len(images) == 0 {
-			c.Status(http.StatusNoContent)
-		} else {
-			c.JSON(http.StatusOK, images)
-		}
-	*/
+	if err != nil {
+		c.Status(http.StatusNotAcceptable)
+		return
+	}
 
-	c.Status(http.StatusNoContent)
-}
-
-func GetImagesWithVolumes(c *gin.Context) {
-	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/labels
-	/*
-		var images = repository.GetImagesWithVolumes()
-
-		if len(images) == 0 {
-			c.Status(http.StatusNoContent)
-		} else {
-			c.JSON(http.StatusOK, images)
-		}
-	*/
-
-	c.Status(http.StatusNoContent)
+	if len(images) == 0 {
+		c.Status(http.StatusNoContent)
+	} else {
+		c.JSON(http.StatusOK, images)
+	}
 }
 
 func GetImagesByVolume(c *gin.Context) {
 	// curl --data "vlm=vendor" -H "Content-Type: application/json" http://localhost:9080/api/v1/labels
-	/*
-		vlm := c.PostForm("vlm")
+	vlm := c.PostForm("vlm")
 
-		var images = repository.GetImagesByVolume(vlm)
+	images, err := repository.FindByVolume(vlm)
 
-		if len(images) == 0 {
-			c.Status(http.StatusNoContent)
-		} else {
-			c.JSON(http.StatusOK, images)
-		}
-	*/
+	if err != nil {
+		c.Status(http.StatusNotAcceptable)
+		return
+	}
+
+	if len(images) == 0 {
+		c.Status(http.StatusNoContent)
+	} else {
+		c.JSON(http.StatusOK, images)
+	}
 
 	c.Status(http.StatusNoContent)
 }
