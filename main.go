@@ -57,7 +57,23 @@ func main() {
 			Name:    "list",
 			Aliases: []string{"ls"},
 			Usage:   "list all the images",
-			Action:  CmdList,
+			Subcommands: []cli.Command{
+				{
+					Name:   "no",
+					Usage:  "Get a limit number of images",
+					Action: CmdListByNumber,
+				},
+				{
+					Name:   "li",
+					Usage:  "Get images with name like",
+					Action: CmdListByName,
+				},
+				{
+					Name:   "all",
+					Usage:  "Get info of the images",
+					Action: CmdList,
+				},
+			},
 		},
 		{
 			Name:    "info",
@@ -192,6 +208,28 @@ func CmdUpdate(ctx *cli.Context) {
 func CmdList(ctx *cli.Context) {
 	commandWrapper(ctx, func() {
 		commands.List()
+	})
+}
+
+func CmdListByNumber(ctx *cli.Context) {
+	commandWrapper(ctx, func() {
+		co, err := intFromArguments(ctx)
+		if err != nil {
+			parrot.Error("Error...", err)
+			return
+		}
+		commands.ListByNumber(co)
+	})
+}
+
+func CmdListByName(ctx *cli.Context) {
+	commandWrapper(ctx, func() {
+		name, err := stringFromArguments(ctx)
+		if err != nil {
+			parrot.Error("Error...", err)
+			return
+		}
+		commands.ListByName(name)
 	})
 }
 

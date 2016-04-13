@@ -105,6 +105,61 @@ func (r *Commands) List() {
 
 }
 
+func (r *Commands) ListByNumber(co int) {
+	var header = Image{}
+
+	if co <= 0 {
+		parrot.TablePrint(header.HeaderForList(), nil)
+		return
+	}
+
+	images, err := repository.GetAll()
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
+
+	var iis = [][]string{}
+
+	for i := 0; i < co; i++ {
+		for _, r := range images[i].RowsForList() {
+			iis = append(iis, r)
+		}
+	}
+
+	parrot.TablePrint(header.HeaderForList(), iis)
+
+}
+
+func (r *Commands) ListByName(name string) {
+	imagesMap := make(map[string]bool)
+	images, err := repository.GetAll()
+
+	if err != nil {
+		parrot.Error("Error", err)
+		return
+	}
+
+	var header = Image{}
+	var iis = [][]string{}
+
+	for _, i := range images {
+		for _, t := range i.Tags {
+			if strings.Contains(t.ID, name) && !imagesMap[i.ID] {
+				imagesMap[i.ID] = true
+
+				for _, r := range i.RowsForList() {
+					iis = append(iis, r)
+				}
+			}
+		}
+	}
+
+	parrot.TablePrint(header.HeaderForList(), iis)
+
+}
+
 func (r *Commands) Labels() {
 	images, err := repository.GetAll()
 

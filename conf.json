@@ -1,7 +1,7 @@
 {
 	"repositoryDirectory": "tmp",
 	"repositoryFile": "gadget.db",
-	"debugMode": true,
+	"debugMode": false,
 	"restServerMode": "release",
 	"restPort": 9080,
 	"useDockerMachine": false,
