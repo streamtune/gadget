@@ -4,7 +4,7 @@
 	"debugMode": false,
 	"restServerMode": "release",
 	"restPort": 9080,
-	"useDockerMachine": false,
+	"useDockerMachine": true,
 	"machineDockerEndpoint" : "tcp://192.168.99.100:2376",
 	"machineDockerCertFile" : "/home/gianluca/.docker/machine/machines/dev/cert.pem",
 	"machineDockerKeyFile" : "/home/gianluca/.docker/machine/machines/dev/key.pem",

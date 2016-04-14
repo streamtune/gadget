@@ -1,10 +1,10 @@
 package main
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/fsouza/go-dockerclient"
+	"gopkg.in/cheggaaa/pb.v1"
 )
 
 type Commands struct {
@@ -50,6 +50,9 @@ func (r *Commands) Update() error {
 
 	var c = 0
 
+	count := len(imgs)
+	bar := pb.StartNew(count)
+
 	for _, img := range imgs {
 		var id = TruncateID(img.ID)
 
@@ -76,9 +79,11 @@ func (r *Commands) Update() error {
 		} else {
 			parrot.Debug("["+id+"] - ", strings.Join(img.RepoTags, ", "), " not inserted in bucket because already exists")
 		}
+
+		bar.Increment()
 	}
 
-	parrot.Println("Added " + strconv.Itoa(c) + " images")
+	bar.FinishPrint("Done.")
 
 	return nil
 }
@@ -118,6 +123,10 @@ func (r *Commands) ListByNumber(co int) {
 	if err != nil {
 		parrot.Error("Error", err)
 		return
+	}
+
+	if co > len(images) {
+		co = len(images)
 	}
 
 	var iis = [][]string{}

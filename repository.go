@@ -107,7 +107,7 @@ func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) error {
 	image.VirtualSize = bytefmt.ByteSize(uint64(img.VirtualSize))
 
 	err := r.DB.Save(&image)
-	parrot.Info("--> added image", image.ID)
+	parrot.Debug("--> added image", image.ID)
 
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) error {
 	image.Blob.ID = image.ID
 
 	err = r.DB.Save(&image.Blob)
-	parrot.Info("--> added imageBlob", image.Blob.ID)
+	parrot.Debug("--> added imageBlob", image.Blob.ID)
 
 	if err != nil {
 		return err
@@ -144,7 +144,7 @@ func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) error {
 		}
 
 		err = r.DB.Save(&imageTag)
-		parrot.Info("--> added imageTag", imageTag.ID, image.ID)
+		parrot.Debug("--> added imageTag", imageTag.ID, image.ID)
 
 		if err != nil {
 			return err
@@ -169,7 +169,7 @@ func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) error {
 		}
 
 		err = r.DB.Save(&imageLabel)
-		parrot.Info("--> added imageLabel", imageLabel.ID, image.ID)
+		parrot.Debug("--> added imageLabel", imageLabel.ID, image.ID)
 		if err != nil {
 			return err
 		}
@@ -194,7 +194,7 @@ func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) error {
 		}
 
 		err = r.DB.Save(&imageVolume)
-		parrot.Info("--> added imageVolume", imageVolume.ID, image.ID)
+		parrot.Debug("--> added imageVolume", imageVolume.ID, image.ID)
 
 		if err != nil {
 			return err
