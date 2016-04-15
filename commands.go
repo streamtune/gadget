@@ -10,6 +10,14 @@ import (
 type Commands struct {
 }
 
+func (r *Commands) Debug(dbg bool) {
+	parrot.Debug("Changing debug mode.")
+
+	settings.SetDebugMode(dbg)
+
+	parrot.Println("Switched debug mode to", dbg)
+}
+
 func (r *Commands) Revive() error {
 	parrot.Debug("Reviving gadget will reinitialize all the datas.")
 
@@ -118,21 +126,17 @@ func (r *Commands) ListByNumber(co int) {
 		return
 	}
 
-	images, err := repository.GetAll()
+	images, err := repository.GetLimit(co)
 
 	if err != nil {
 		parrot.Error("Error", err)
 		return
 	}
 
-	if co > len(images) {
-		co = len(images)
-	}
-
 	var iis = [][]string{}
 
-	for i := 0; i < co; i++ {
-		for _, r := range images[i].RowsForList() {
+	for _, i := range images {
+		for _, r := range i.RowsForList() {
 			iis = append(iis, r)
 		}
 	}

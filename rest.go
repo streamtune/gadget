@@ -13,16 +13,32 @@ func serve() {
 
 	r := gin.Default()
 	r.Use(Cors())
-	v1 := r.Group("api/v1")
+
+	admin := r.Group("api/v1/admin")
 	{
-		v1.HEAD("/revive", HeadRevive)
-		v1.GET("/images", GetImages)
-		v1.GET("/images/:repo/:tag", GetImageByRepoTag)
-		v1.GET("/images/:repo", GetImageByTag)
-		v1.GET("/labels", GetImagesWithLabels)
-		v1.POST("/labels", GetImagesByLabel)
-		v1.GET("/volumes", GetImagesWithVolumes)
-		v1.POST("/volumes", GetImagesByVolume)
+		admin.POST("/debug", PostDebug)
+		admin.POST("/revive", PostRevive)
+		admin.POST("/update", PostUpdate)
+	}
+
+	images := r.Group("api/v1/images")
+	{
+		images.GET("/", GetImages)
+		images.GET("/:repo/:tag", GetImageByRepoTag)
+		images.GET("/:repo", GetImageByTag)
+		images.POST("/limit", PostImagesByLimit)
+	}
+
+	labels := r.Group("api/v1/labels")
+	{
+		labels.GET("/", GetImagesWithLabels)
+		labels.POST("", GetImagesByLabel)
+	}
+
+	volumes := r.Group("api/v1/volumes")
+	{
+		volumes.GET("/", GetImagesWithVolumes)
+		volumes.POST("", GetImagesByVolume)
 	}
 	r.Run(":" + strconv.Itoa(settings.RestPort()))
 
@@ -35,7 +51,7 @@ func Cors() gin.HandlerFunc {
 	}
 }
 
-func HeadRevive(c *gin.Context) {
+func PostRevive(c *gin.Context) {
 	err := commands.Revive()
 
 	if err != nil {
@@ -43,6 +59,28 @@ func HeadRevive(c *gin.Context) {
 	} else {
 		c.Status(http.StatusNotAcceptable)
 	}
+}
+
+func PostUpdate(c *gin.Context) {
+	err := commands.Update()
+
+	if err != nil {
+		c.Status(http.StatusOK)
+	} else {
+		c.Status(http.StatusNotAcceptable)
+	}
+}
+
+func PostDebug(c *gin.Context) {
+	dbg, err := strconv.ParseBool(c.PostForm("dbg"))
+
+	if err != nil {
+		dbg = false
+	}
+
+	commands.Debug(dbg)
+
+	c.Status(http.StatusOK)
 }
 
 func GetImages(c *gin.Context) {
@@ -54,8 +92,39 @@ func GetImages(c *gin.Context) {
 		return
 	}
 
-	for _, img := range images {
-		parrot.Debug("[" + img.ID + "] - [" + strconv.Itoa(len(img.Tags)) + "] [" + strconv.Itoa(len(img.Labels)) + "]")
+	if settings.DebugMode() {
+		for _, img := range images {
+			parrot.Debug("[" + img.ID + "] - [" + strconv.Itoa(len(img.Tags)) + "] [" + strconv.Itoa(len(img.Labels)) + "]")
+		}
+	}
+
+	if len(images) == 0 {
+		c.Status(http.StatusNoContent)
+	} else {
+		c.JSON(http.StatusOK, images)
+	}
+}
+
+func PostImagesByLimit(c *gin.Context) {
+	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/images/limit/:count
+	count, err := strconv.Atoi(c.PostForm("count"))
+
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	images, err := repository.GetLimit(count)
+
+	if err != nil {
+		c.Status(http.StatusNotAcceptable)
+		return
+	}
+
+	if settings.DebugMode() {
+		for _, img := range images {
+			parrot.Debug("[" + img.ID + "] - [" + strconv.Itoa(len(img.Tags)) + "] [" + strconv.Itoa(len(img.Labels)) + "]")
+		}
 	}
 
 	if len(images) == 0 {

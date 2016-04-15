@@ -55,6 +55,10 @@ func (sts *Settings) LoadSettings() {
 	}
 }
 
+func (sts Settings) SetDebugMode(dbg bool) {
+	sts.configs.DebugMode = dbg
+}
+
 func (sts Settings) RepositoryDirectory() string {
 	return sts.configs.RepositoryDirectory
 }

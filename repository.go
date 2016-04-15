@@ -223,6 +223,21 @@ func (r *Repository) GetAll() ([]Image, error) {
 	return images, err
 }
 
+func (r *Repository) GetLimit(count int) ([]Image, error) {
+	images := []Image{}
+	err := r.DB.All(&images)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if count > len(images) {
+		count = len(images)
+	}
+
+	return images[0:count], err
+}
+
 func (r *Repository) Get(id string) (Image, error) {
 	var image = Image{}
 
