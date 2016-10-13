@@ -6,8 +6,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/codegangsta/cli"
+	//"github.com/codegangsta/cli"
 	"github.com/gi4nks/quant"
+	"gopkg.in/urfave/cli.v1"
 )
 
 var parrot = quant.NewParrot("gadget")
@@ -166,7 +167,7 @@ func main() {
 }
 
 // List of functions
-func CmdTest(ctx *cli.Context) {
+func CmdTest(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		parrot.Info("Info")
 		parrot.Debug("Debug", "is", "a", "nice", "thing")
@@ -174,16 +175,18 @@ func CmdTest(ctx *cli.Context) {
 		parrot.Error("This is an error", "my friend", "!")
 		Parse()
 	})
+	return nil
 }
 
-func CmdServe(ctx *cli.Context) {
+func CmdServe(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		parrot.Println("Serving gadget for REST Apis on port", settings.RestPort())
 		serve()
 	})
+	return nil
 }
 
-func CmdRevive(ctx *cli.Context) {
+func CmdRevive(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		err := commands.Revive()
 
@@ -192,9 +195,10 @@ func CmdRevive(ctx *cli.Context) {
 			panic(err)
 		}
 	})
+	return nil
 }
 
-func CmdUpdate(ctx *cli.Context) {
+func CmdUpdate(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		err := commands.Update()
 
@@ -203,15 +207,18 @@ func CmdUpdate(ctx *cli.Context) {
 		}
 
 	})
+	return nil
 }
 
-func CmdList(ctx *cli.Context) {
+func CmdList(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		commands.List()
 	})
+
+	return nil
 }
 
-func CmdListByNumber(ctx *cli.Context) {
+func CmdListByNumber(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		co, err := intFromArguments(ctx)
 		if err != nil {
@@ -220,9 +227,11 @@ func CmdListByNumber(ctx *cli.Context) {
 		}
 		commands.ListByNumber(co)
 	})
+
+	return nil
 }
 
-func CmdListByName(ctx *cli.Context) {
+func CmdListByName(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		name, err := stringFromArguments(ctx)
 		if err != nil {
@@ -231,15 +240,17 @@ func CmdListByName(ctx *cli.Context) {
 		}
 		commands.ListByName(name)
 	})
+	return nil
 }
 
-func CmdLabels(ctx *cli.Context) {
+func CmdLabels(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		commands.Labels()
 	})
+	return nil
 }
 
-func CmdLabelsById(ctx *cli.Context) {
+func CmdLabelsById(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		id, err := stringFromArguments(ctx)
 		if err != nil {
@@ -249,9 +260,10 @@ func CmdLabelsById(ctx *cli.Context) {
 
 		commands.LabelsById(id)
 	})
+	return nil
 }
 
-func CmdLabelsByTag(ctx *cli.Context) {
+func CmdLabelsByTag(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		id, err := stringFromArguments(ctx)
 		if err != nil {
@@ -261,16 +273,18 @@ func CmdLabelsByTag(ctx *cli.Context) {
 
 		commands.LabelsByTag(id)
 	})
+	return nil
 }
 
 // Infos
-func CmdInfo(ctx *cli.Context) {
+func CmdInfo(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		commands.Info()
 	})
+	return nil
 }
 
-func CmdInfoById(ctx *cli.Context) {
+func CmdInfoById(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		id, err := stringFromArguments(ctx)
 		if err != nil {
@@ -280,9 +294,10 @@ func CmdInfoById(ctx *cli.Context) {
 
 		commands.InfoById(id)
 	})
+	return nil
 }
 
-func CmdInfoByTag(ctx *cli.Context) {
+func CmdInfoByTag(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		id, err := stringFromArguments(ctx)
 		if err != nil {
@@ -292,17 +307,19 @@ func CmdInfoByTag(ctx *cli.Context) {
 
 		commands.InfoByTag(id)
 	})
+	return nil
 }
 
 // Volumes
-func CmdVolumes(ctx *cli.Context) {
+func CmdVolumes(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 
 		commands.Volumes()
 	})
+	return nil
 }
 
-func CmdVolumesById(ctx *cli.Context) {
+func CmdVolumesById(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		id, err := stringFromArguments(ctx)
 		if err != nil {
@@ -311,9 +328,10 @@ func CmdVolumesById(ctx *cli.Context) {
 		}
 		commands.VolumesById(id)
 	})
+	return nil
 }
 
-func CmdVolumesByTag(ctx *cli.Context) {
+func CmdVolumesByTag(ctx *cli.Context) error {
 	commandWrapper(ctx, func() {
 		id, err := stringFromArguments(ctx)
 		if err != nil {
@@ -323,6 +341,7 @@ func CmdVolumesByTag(ctx *cli.Context) {
 
 		commands.VolumesByTag(id)
 	})
+	return nil
 }
 
 func CmdWrapper(ctx *cli.Context) {
