@@ -26,7 +26,11 @@ func Parse() {
 		parrot.Debug(scanner.Text())
 	}
 
-	p, err := parser.Parse(df)
+	d := parser.Directive{LookingForDirectives: true}
+	parser.SetEscapeToken(parser.DefaultEscapeToken, &d)
+
+	p, err := parser.Parse(df, &d)
+
 	if err == nil {
 		parrot.Error("No error parsing broken dockerfile for", sampleFile())
 	}
