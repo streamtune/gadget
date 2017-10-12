@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+
+	"github.com/gi4nks/quant"
 )
 
 type Configuration struct {
@@ -24,7 +26,7 @@ type Settings struct {
 }
 
 func (sts *Settings) LoadSettings() {
-	folder, err := pathUtils.ExecutableFolder()
+	folder, err := quant.ExecutableFolder()
 
 	if err != nil {
 		parrot.Error("Executable forlder error", err)

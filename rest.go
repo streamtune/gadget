@@ -2,13 +2,28 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	//"github.com/emicklei/go-restful"
+	"github.com/gocraft/health"
 )
 
+//should be global Var
+var stream = health.NewStream()
+
 func serve() {
+	// Log to stdout!
+	stream.AddSink(&health.WriterSink{os.Stdout})
+	// Make sink and add it to stream
+	sink := health.NewJsonPollingSink(time.Minute*5, time.Minute*20)
+	stream.AddSink(sink)
+	// Start the HTTP server! This will expose metrics via a JSON API.
+	adr := ":5001"
+	sink.StartServer(adr)
+
 	gin.SetMode(settings.RestServerMode())
 
 	r := gin.Default()

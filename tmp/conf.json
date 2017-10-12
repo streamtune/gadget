@@ -1,0 +1,13 @@
+{
+	"repositoryDirectory": "tmp",
+	"repositoryFile": "gadget.db",
+	"debugMode": true,
+	"restServerMode": "release",
+	"restPort": 9080,
+	"useDockerMachine": false,
+	"machineDockerEndpoint" : "tcp://192.168.99.100:2376",
+	"machineDockerCertFile" : "/home/gianluca/.docker/machine/machines/dev/cert.pem",
+	"machineDockerKeyFile" : "/home/gianluca/.docker/machine/machines/dev/key.pem",
+	"machineDockerCAFile" : "/home/gianluca/.docker/machine/machines/dev/ca.pem",
+	"localDockerEndpoint": "unix:///var/run/docker.sock"
+}

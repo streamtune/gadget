@@ -2,11 +2,9 @@ package main
 
 import (
 	"errors"
-	//	"fmt"
 	"os"
 	"strconv"
 
-	//"github.com/codegangsta/cli"
 	"github.com/gi4nks/quant"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -15,7 +13,8 @@ var parrot = quant.NewParrot("gadget")
 
 var settings = Settings{}
 var repository = Repository{}
-var pathUtils = quant.NewPathUtils()
+
+//var pathUtils = quant.NewPathUtils()
 var commands = Commands{}
 
 func initDB() {

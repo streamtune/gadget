@@ -11,6 +11,8 @@ import (
 
 	"github.com/asdine/storm"
 	"github.com/pivotal-golang/bytefmt"
+
+	"github.com/gi4nks/quant"
 )
 
 type Repository struct {
@@ -26,13 +28,13 @@ func repositoryFullName() string {
 func (r *Repository) InitDB() {
 	var err error
 
-	b, err := pathUtils.ExistsPath(settings.RepositoryDirectory())
+	b, err := quant.ExistsPath(settings.RepositoryDirectory())
 	if err != nil {
 		parrot.Error("Got error when reading repository directory", err)
 	}
 
 	if !b {
-		pathUtils.CreatePath(settings.RepositoryDirectory())
+		quant.CreatePath(settings.RepositoryDirectory())
 	}
 
 	r.DB, err = storm.Open(repositoryFullName(), storm.AutoIncrement())
@@ -74,7 +76,7 @@ func (r *Repository) CloseDB() {
 }
 
 func (r *Repository) BackupSchema() error {
-	b, _ := pathUtils.ExistsPath(settings.RepositoryDirectory())
+	b, _ := quant.ExistsPath(settings.RepositoryDirectory())
 	if !b {
 		return errors.New("Gadget repository path does not exist")
 	}

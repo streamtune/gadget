@@ -114,7 +114,7 @@ func (r *Commands) List() {
 		}
 	}
 
-	parrot.TablePrint(header.HeaderForList(), iis)
+	parrot.Tablify(header.HeaderForList(), iis)
 
 }
 
@@ -122,7 +122,7 @@ func (r *Commands) ListByNumber(co int) {
 	var header = Image{}
 
 	if co <= 0 {
-		parrot.TablePrint(header.HeaderForList(), nil)
+		parrot.Tablify(header.HeaderForList(), nil)
 		return
 	}
 
@@ -141,7 +141,7 @@ func (r *Commands) ListByNumber(co int) {
 		}
 	}
 
-	parrot.TablePrint(header.HeaderForList(), iis)
+	parrot.Tablify(header.HeaderForList(), iis)
 
 }
 
@@ -169,7 +169,7 @@ func (r *Commands) ListByName(name string) {
 		}
 	}
 
-	parrot.TablePrint(header.HeaderForList(), iis)
+	parrot.Tablify(header.HeaderForList(), iis)
 
 }
 
@@ -190,7 +190,7 @@ func (r *Commands) Labels() {
 		}
 	}
 
-	parrot.TablePrint(header.HeaderForLabel(), iis)
+	parrot.Tablify(header.HeaderForLabel(), iis)
 }
 
 func (r *Commands) LabelsById(id string) {
@@ -208,7 +208,7 @@ func (r *Commands) LabelsById(id string) {
 		iis = append(iis, r)
 	}
 
-	parrot.TablePrint(header.HeaderForLabel(), iis)
+	parrot.Tablify(header.HeaderForLabel(), iis)
 }
 
 func (r *Commands) LabelsByTag(id string) {
@@ -228,7 +228,7 @@ func (r *Commands) LabelsByTag(id string) {
 		}
 	}
 
-	parrot.TablePrint(header.HeaderForLabel(), iis)
+	parrot.Tablify(header.HeaderForLabel(), iis)
 }
 
 func (r *Commands) Info() {
@@ -249,7 +249,7 @@ func (r *Commands) Info() {
 		}
 	}
 
-	parrot.TablePrint(header.HeaderForInfo(), iis)
+	parrot.Tablify(header.HeaderForInfo(), iis)
 }
 
 func (r *Commands) InfoById(id string) {
@@ -267,7 +267,7 @@ func (r *Commands) InfoById(id string) {
 		iis = append(iis, r)
 	}
 
-	parrot.TablePrint(header.HeaderForInfo(), iis)
+	parrot.Tablify(header.HeaderForInfo(), iis)
 }
 
 func (r *Commands) InfoByTag(id string) {
@@ -287,7 +287,7 @@ func (r *Commands) InfoByTag(id string) {
 		}
 	}
 
-	parrot.TablePrint(header.HeaderForInfo(), iis)
+	parrot.Tablify(header.HeaderForInfo(), iis)
 }
 
 func (r *Commands) Volumes() {
@@ -307,7 +307,7 @@ func (r *Commands) Volumes() {
 		}
 	}
 
-	parrot.TablePrint(header.HeaderForVolume(), iis)
+	parrot.Tablify(header.HeaderForVolume(), iis)
 }
 
 func (r *Commands) VolumesById(id string) {
@@ -325,7 +325,7 @@ func (r *Commands) VolumesById(id string) {
 		iis = append(iis, r)
 	}
 
-	parrot.TablePrint(header.HeaderForVolume(), iis)
+	parrot.Tablify(header.HeaderForVolume(), iis)
 }
 
 func (r *Commands) VolumesByTag(id string) {
@@ -344,5 +344,5 @@ func (r *Commands) VolumesByTag(id string) {
 			iis = append(iis, r)
 		}
 	}
-	parrot.TablePrint(header.HeaderForVolume(), iis)
+	parrot.Tablify(header.HeaderForVolume(), iis)
 }
