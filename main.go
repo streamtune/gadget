@@ -1,14 +1,20 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"os"
-	"strconv"
 
-	"github.com/gi4nks/quant"
-	"gopkg.in/urfave/cli.v1"
+	"github.com/streamtune/gadget/cmd"
 )
 
+func main() {
+	if err := cmd.RootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+}
+
+/*
 var parrot = quant.NewParrot("gadget")
 
 var settings = Settings{}
@@ -390,3 +396,4 @@ func commandWrapper(ctx *cli.Context, cmd quant.Action0) {
 
 	cmd()
 }
+*/
