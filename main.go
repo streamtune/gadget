@@ -13,13 +13,3 @@ func main() {
 		os.Exit(-1)
 	}
 }
-
-/*
-func CmdServe(ctx *cli.Context) error {
-	commandWrapper(ctx, func() {
-		parrot.Println("Serving gadget for REST Apis on port", settings.RestPort())
-		serve()
-	})
-	return nil
-}
-*/

@@ -47,14 +47,14 @@ func (rs *Rest) Serve() {
 	r := gin.Default()
 	r.Use(rs.cors())
 
-	admin := r.Group("api/v1/admin")
+	admin := r.Group("/api/v1/admin")
 	{
 		admin.POST("/debug", rs.postDebug)
 		admin.POST("/revive", rs.postRevive)
 		admin.POST("/update", rs.postUpdate)
 	}
 
-	images := r.Group("api/v1/images")
+	images := r.Group("/api/v1/images")
 	{
 		images.GET("/", rs.getImages)
 		images.GET("/:repo/:tag", rs.getImageByRepoTag)
@@ -62,17 +62,20 @@ func (rs *Rest) Serve() {
 		images.POST("/limit", rs.postImagesByLimit)
 	}
 
-	labels := r.Group("api/v1/labels")
+	labels := r.Group("/api/v1/labels")
 	{
 		labels.GET("/", rs.getImagesWithLabels)
 		labels.POST("", rs.getImagesByLabel)
 	}
 
-	volumes := r.Group("api/v1/volumes")
+	volumes := r.Group("/api/v1/volumes")
 	{
 		volumes.GET("/", rs.getImagesWithVolumes)
 		volumes.POST("", rs.getImagesByVolume)
 	}
+
+	rs.parrot.Println("Gadget Rest APIs running on port", rs.configuration.RestPort)
+
 	r.Run(":" + strconv.Itoa(rs.configuration.RestPort))
 
 }
@@ -95,6 +98,8 @@ func (rs *Rest) postRevive(c *gin.Context) {
 }
 
 func (rs *Rest) postUpdate(c *gin.Context) {
+	// curl -i -X POST -H "Content-Type: application/json" http://localhost:9080/api/v1/admin/update
+
 	err := rs.commands.Update()
 
 	if err != nil {
@@ -119,6 +124,8 @@ func (rs *Rest) postDebug(c *gin.Context) {
 func (rs *Rest) getImages(c *gin.Context) {
 	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/images
 	images, err := rs.repository.GetAll()
+
+	rs.parrot.Println("-->", err)
 
 	if err != nil {
 		c.Status(http.StatusNotAcceptable)
