@@ -13,8 +13,8 @@ type Image struct {
 	CreatedAt   string        `json:createdAt`
 	LongId      string        `json:longId storm:"index"`
 	Labels      []ImageLabel  `json:labels`
-	Size        string        `json:size`
-	VirtualSize string        `json:virtualSize`
+	Size        uint64        `json:size`
+	VirtualSize uint64        `json:virtualSize`
 	Tags        []ImageTag    `json:tags`
 	Volumes     []ImageVolume `json:volumes`
 	Blob        ImageBlob     `json:blob`
@@ -59,7 +59,7 @@ func (r *Image) RowsForList(u *utils.Utilities) [][]string {
 	for _, t := range r.Tags {
 		//time.Unix(0, r.CreatedAt).Format("2006-01-02 15:04:05")
 		rs = append(rs, []string{r.ID, t.Name, u.Truncate(t.Version),
-			r.Size, r.VirtualSize,
+			strconv.Itoa(int(r.Size)), strconv.Itoa(int(r.VirtualSize)),
 			strconv.Itoa(len(r.Tags)),
 			strconv.Itoa(len(r.Labels)),
 			strconv.Itoa(len(r.Volumes))})
@@ -77,7 +77,8 @@ func (r *Image) RowsForInfo(u *utils.Utilities) [][]string {
 
 	for _, t := range r.Tags {
 		//time.Unix(0, r.CreatedAt).Format("2006-01-02 15:04:05")
-		rs = append(rs, []string{r.ID, t.ID, u.NameID(r.LongId), r.Size, r.VirtualSize})
+		rs = append(rs, []string{r.ID, t.ID, u.NameID(r.LongId),
+			strconv.Itoa(int(r.Size)), strconv.Itoa(int(r.VirtualSize))})
 	}
 
 	return rs

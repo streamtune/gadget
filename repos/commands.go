@@ -47,6 +47,9 @@ func (r *Commands) Revive() error {
 
 func (r *Commands) Update() error {
 	endpoint := r.configuration.LocalDockerEndpoint
+
+	r.parrot.Debug("Endpoint: " + endpoint)
+
 	client, err := docker.NewClient(endpoint)
 
 	if err != nil {
@@ -110,13 +113,12 @@ func (r *Commands) Update() error {
 	return nil
 }
 
-func (r *Commands) List() {
+func (r *Commands) List() error {
 
 	images, err := r.repository.GetAll()
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var header = models.Image{}
@@ -130,21 +132,22 @@ func (r *Commands) List() {
 
 	r.parrot.Tablify(header.HeaderForList(), iis)
 
+	return nil
+
 }
 
-func (r *Commands) ListByNumber(co int) {
+func (r *Commands) ListByNumber(co int) error {
 	var header = models.Image{}
 
 	if co <= 0 {
 		r.parrot.Tablify(header.HeaderForList(), nil)
-		return
+		return nil
 	}
 
 	images, err := r.repository.GetLimit(co)
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var iis = [][]string{}
@@ -157,15 +160,16 @@ func (r *Commands) ListByNumber(co int) {
 
 	r.parrot.Tablify(header.HeaderForList(), iis)
 
+	return nil
+
 }
 
-func (r *Commands) ListByName(name string) {
+func (r *Commands) ListByName(name string) error {
 	imagesMap := make(map[string]bool)
 	images, err := r.repository.GetAll()
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var header = models.Image{}
@@ -184,15 +188,15 @@ func (r *Commands) ListByName(name string) {
 	}
 
 	r.parrot.Tablify(header.HeaderForList(), iis)
+	return nil
 
 }
 
-func (r *Commands) Labels() {
+func (r *Commands) Labels() error {
 	images, err := r.repository.GetAll()
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var header = models.Image{}
@@ -205,14 +209,15 @@ func (r *Commands) Labels() {
 	}
 
 	r.parrot.Tablify(header.HeaderForLabel(), iis)
+
+	return nil
 }
 
-func (r *Commands) LabelsById(id string) {
+func (r *Commands) LabelsById(id string) error {
 	image, err := r.repository.Get(id)
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var header = models.Image{}
@@ -223,14 +228,15 @@ func (r *Commands) LabelsById(id string) {
 	}
 
 	r.parrot.Tablify(header.HeaderForLabel(), iis)
+
+	return nil
 }
 
-func (r *Commands) LabelsByTag(id string) {
+func (r *Commands) LabelsByTag(id string) error {
 	images, err := r.repository.FindByTag(id)
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var header = models.Image{}
@@ -243,15 +249,15 @@ func (r *Commands) LabelsByTag(id string) {
 	}
 
 	r.parrot.Tablify(header.HeaderForLabel(), iis)
+	return nil
 }
 
-func (r *Commands) Info() {
+func (r *Commands) Info() error {
 
 	images, err := r.repository.GetAll()
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var header = models.Image{}
@@ -264,14 +270,14 @@ func (r *Commands) Info() {
 	}
 
 	r.parrot.Tablify(header.HeaderForInfo(), iis)
+	return nil
 }
 
-func (r *Commands) InfoById(id string) {
+func (r *Commands) InfoById(id string) error {
 	image, err := r.repository.Get(id)
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var header = models.Image{}
@@ -282,14 +288,14 @@ func (r *Commands) InfoById(id string) {
 	}
 
 	r.parrot.Tablify(header.HeaderForInfo(), iis)
+	return nil
 }
 
-func (r *Commands) InfoByTag(id string) {
+func (r *Commands) InfoByTag(id string) error {
 	images, err := r.repository.FindByTag(id)
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var header = models.Image{}
@@ -302,14 +308,14 @@ func (r *Commands) InfoByTag(id string) {
 	}
 
 	r.parrot.Tablify(header.HeaderForInfo(), iis)
+	return nil
 }
 
-func (r *Commands) Volumes() {
+func (r *Commands) Volumes() error {
 	images, err := r.repository.GetAll()
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var header = models.Image{}
@@ -322,14 +328,15 @@ func (r *Commands) Volumes() {
 	}
 
 	r.parrot.Tablify(header.HeaderForVolume(), iis)
+
+	return nil
 }
 
-func (r *Commands) VolumesById(id string) {
+func (r *Commands) VolumesById(id string) error {
 	image, err := r.repository.Get(id)
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var header = models.Image{}
@@ -340,14 +347,15 @@ func (r *Commands) VolumesById(id string) {
 	}
 
 	r.parrot.Tablify(header.HeaderForVolume(), iis)
+
+	return nil
 }
 
-func (r *Commands) VolumesByTag(id string) {
+func (r *Commands) VolumesByTag(id string) error {
 	images, err := r.repository.FindByTag(id)
 
 	if err != nil {
-		r.parrot.Error("Error", err)
-		return
+		return err
 	}
 
 	var header = models.Image{}
@@ -359,4 +367,6 @@ func (r *Commands) VolumesByTag(id string) {
 		}
 	}
 	r.parrot.Tablify(header.HeaderForVolume(), iis)
+
+	return nil
 }

@@ -32,7 +32,7 @@ var Parrot = quant.NewParrot("gadget")
 var Utilities = utils.NewUtilities(*Parrot)
 var Configuration = utils.NewConfiguration(*Parrot)
 var Repository = &repos.Repository{}
-var Commands = repos.NewCommands(*Parrot, *Configuration, *Repository, *Utilities)
+var Commands = &repos.Commands{}
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -84,6 +84,13 @@ func initConfig() {
 	/* -------------------------- */
 	/* initialize the application */
 	/* -------------------------- */
+
+	/*
+		RepositoryDirectory   string
+		RepositoryFile        string
+		DebugMode             bool
+	*/
+
 	folder, err := quant.ExecutableFolder()
 
 	if err != nil {
@@ -100,18 +107,51 @@ func initConfig() {
 		Configuration.RepositoryFile = viper.GetString("repositoryFile")
 	}
 
-	/*
-		if viper.GetInt("lastCountDefault") >= 0 {
-			Configuration.LastCountDefault = viper.GetInt("lastCountDefault")
-		}
-	*/
-
 	Configuration.DebugMode = viper.GetBool("debugMode")
-
 	if Configuration.DebugMode {
 		Parrot = quant.NewVerboseParrot("gadget")
 	}
 
-	Repository = repos.NewRepository(*Parrot, *Configuration, *Utilities)
+	/*
+		RestServerMode        string
+		RestPort              int
+		LocalDockerEndpoint   string
+		MachineDockerEndpoint string
+		UseDockerMachine      bool
+		MachineDockerCertFile string
+		MachineDockerKeyFile  string
+		MachineDockerCAFile   string
+	*/
 
+	if viper.GetString("restServerMode") != "" {
+		Configuration.RestServerMode = viper.GetString("restServerMode")
+	}
+
+	if viper.GetInt("restPort") >= 0 {
+		Configuration.RestPort = viper.GetInt("restPort")
+	}
+
+	if viper.GetString("localDockerEndpoint") != "" {
+		Configuration.LocalDockerEndpoint = viper.GetString("localDockerEndpoint")
+	}
+
+	if viper.GetString("machineDockerEndpoint") != "" {
+		Configuration.MachineDockerEndpoint = viper.GetString("machineDockerEndpoint")
+	}
+
+	Configuration.UseDockerMachine = viper.GetBool("useDockerMachine")
+
+	if viper.GetString("machineDockerCertFile") != "" {
+		Configuration.MachineDockerCertFile = viper.GetString("machineDockerCertFile")
+	}
+
+	if viper.GetString("machineDockerKeyFile") != "" {
+		Configuration.MachineDockerKeyFile = viper.GetString("machineDockerKeyFile")
+	}
+
+	if viper.GetString("machineDockerCAFile") != "" {
+		Configuration.MachineDockerCAFile = viper.GetString("machineDockerCAFile")
+	}
+
+	Repository = repos.NewRepository(*Parrot, *Configuration, *Utilities)
 }

@@ -16,7 +16,7 @@ const ConstRestPort int = 9080
 	export DOCKER_MACHINE_NAME="dev"
 */
 
-const ConstUseDockerMachine bool = true
+const ConstUseDockerMachine bool = false
 const ConstMachineDockerEndpoint string = "tcp://192.168.99.100:2376"
 const ConstMachineDockerCertFile string = "/home/gianluca/.docker/machine/machines/dev/cert.pem"
 const ConstMachineDockerKeyFile string = "/home/gianluca/.docker/machine/machines/dev/key.pem"

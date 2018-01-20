@@ -9,7 +9,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 
 	"github.com/asdine/storm"
-	"github.com/pivotal-golang/bytefmt"
 
 	"github.com/gi4nks/quant"
 
@@ -43,11 +42,11 @@ func (r *Repository) InitDB() {
 		quant.CreatePath(r.configuration.RepositoryDirectory)
 	}
 
-	r.DB, err = storm.Open(r.configuration.RepositoryFullName(), storm.AutoIncrement())
-	r.parrot.Debug("Opened database", r.configuration.RepositoryFullName)
+	r.DB, err = storm.Open(r.configuration.RepositoryFullName())
+	r.parrot.Debug("Opened database", r.configuration.RepositoryFullName())
 
 	if err != nil {
-		r.parrot.Error("Got error creating repository directory", err)
+		r.parrot.Error("Got error creating database", err)
 	}
 }
 
@@ -111,8 +110,8 @@ func (r *Repository) Put(img docker.APIImages, imgDetails docker.Image) error {
 	image.LongId = img.ID
 
 	image.CreatedAt = time.Unix(0, img.Created).Format("2006-01-02 15:04:05")
-	image.Size = bytefmt.ByteSize(uint64(img.Size))
-	image.VirtualSize = bytefmt.ByteSize(uint64(img.VirtualSize))
+	image.Size = uint64(img.Size)
+	image.VirtualSize = uint64(img.VirtualSize)
 
 	err := r.DB.Save(&image)
 	r.parrot.Debug("--> added image", image.ID)

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gi4nks/quant"
+	repos "github.com/streamtune/gadget/repos"
 )
 
 // -------------------------------
@@ -16,6 +17,8 @@ func CmdWrapper(args []string) {
 func commandWrapper(args []string, cmd quant.Action0) {
 	Repository.InitDB()
 	Repository.InitSchema()
+
+	Commands = repos.NewCommands(*Parrot, *Configuration, *Repository, *Utilities)
 
 	CmdWrapper(args)
 
