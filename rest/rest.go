@@ -125,8 +125,6 @@ func (rs *Rest) getImages(c *gin.Context) {
 	// curl -i -X GET -H "Content-Type: application/json" http://localhost:8080/api/v1/images
 	images, err := rs.repository.GetAll()
 
-	rs.parrot.Println("-->", err)
-
 	if err != nil {
 		c.Status(http.StatusNotAcceptable)
 		return
